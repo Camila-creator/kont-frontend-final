@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ads Manager | Agromedic</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        * { box-sizing: border-box; }
+        .ads-layout { padding: 25px; height: calc(100vh - 70px); overflow-y: auto; overflow-x: hidden; }
+        
+        .ads-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .header-actions { display: flex; gap: 15px; }
+        
+        /* Alerta de Anuncios Pendientes (La caja base) */
+        #pendingCalendarAds { display: none; padding: 15px 20px; border-radius: 8px; margin-bottom: 25px; align-items: center; justify-content: space-between; transition: 0.3s; }
+        
+        .campaign-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+        .campaign-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); transition: 0.2s; border-left: 5px solid #0d6efd; cursor: pointer; display: flex; flex-direction: column;}
+        .campaign-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.05); }
+        .campaign-card.finalizada { border-left-color: #6b7280; opacity: 0.8; }
+        
+        .camp-title { font-size: 1.1rem; font-weight: 800; color: #1f2937; margin-bottom: 10px; display: flex; justify-content: space-between;}
+        .camp-badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 20px; font-weight: 700; text-transform: uppercase; }
+        .badge-meta { background: #eff6ff; color: #1d4ed8; }
+        .badge-google { background: #fef2f2; color: #b91c1c; }
+        .badge-tiktok { background: #f3f4f6; color: #111827; }
+        
+        .camp-data { display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.9rem; color: #4b5563; border-top: 1px dashed #e5e7eb; padding-top: 10px;}
+        
+        .camp-results { margin-top: auto; padding-top: 15px; } 
+        .results-box { background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e5e7eb; }
+        .res-metrics { display: flex; justify-content: space-between; font-size: 0.8rem; color: #4b5563; margin-bottom: 10px; font-weight: 600; }
+        .res-evals { display: flex; flex-direction: column; gap: 5px; }
+        .eval-badge { display: flex; justify-content: space-between; font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; background: white; border: 1px solid #d1d5db; font-weight: 700; }
+        .eval-badge.user { border-left: 3px solid #f59e0b; color: #b45309; }
+        .eval-badge.system { border-left: 3px solid #0d6efd; color: #1d4ed8; }
+        .camp-results.empty { text-align: center; font-size: 0.8rem; color: #9ca3af; font-style: italic; background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px dashed #e5e7eb;}
+
+        /* Modales */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: flex; justify-content: center; align-items: center; z-index: 9999; opacity: 0; visibility: hidden; transition: 0.3s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-box { background: white; width: 95%; max-width: 800px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; transform: translateY(-20px); transition: 0.3s; }
+        .modal-overlay.active .modal-box { transform: translateY(0); }
+        .modal-header { padding: 20px 30px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; flex-shrink: 0;}
+        .modal-tabs { display: flex; border-bottom: 1px solid #e5e7eb; background: #f8fafc; padding: 0 30px; flex-shrink: 0;}
+        .tab-btn { padding: 15px 20px; border: none; background: none; font-weight: 600; color: #6b7280; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: #0d6efd; border-bottom-color: #0d6efd; }
+        form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+        .modal-body { padding: 30px; overflow-y: auto; flex: 1; min-height: 0; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        .modal-footer { padding: 20px 30px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc; flex-shrink: 0;}
+        
+        .form-group { margin-bottom: 18px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        label { font-size: 0.75rem; font-weight: 700; color: #6b7280; display: block; margin-bottom: 6px; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; }
+        input:focus, select:focus, textarea:focus { border-color: #0d6efd; outline: none; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15); }
+        
+        .budget-preview { background: #eff6ff; border: 1px dashed #93c5fd; padding: 15px; border-radius: 8px; text-align: center; margin-top: 10px; }
+        .budget-preview h4 { margin: 0; color: #1d4ed8; font-size: 1.5rem; }
+        
+        .btn-primary { background: #0d6efd; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-outline { background: transparent; border: 1px solid #d1d5db; color: #4b5563; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-success { background: #10b981; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-danger { background: #ef4444; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        
+        .audience-item { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .audience-item h5 { margin: 0 0 5px 0; color: #1f2937; font-size: 1rem; }
+        .audience-item p { margin: 0; font-size: 0.8rem; color: #6b7280; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="layout">
+    <div id="sidebar"></div>
+    <div class="content">
+        <div id="header"></div>
+
+        <div class="ads-layout">
+            
+            <div class="ads-header">
+                <div>
+                    <h2 style="margin:0;"><i class="bi bi-megaphone-fill text-primary"></i> Ads Manager</h2>
+                    <p style="color:#6b7280; margin:5px 0 0 0;">Gestión de pautas publicitarias e inversión</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-outline" onclick="openAudienceManagerModal()"><i class="bi bi-people-fill"></i> Públicos Guardados</button>
+                    <button class="btn-primary" onclick="openAdModal()"><i class="bi bi-plus-lg"></i> Crear Campaña</button>
+                </div>
+            </div>
+
+            <div id="pendingCalendarAds"></div>
+            
+            <div class="campaign-grid" id="campaignList">
+                </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="adModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modalTitle">Configurar Anuncio</h3>
+            <button type="button" class="btn-outline" style="border:none; font-size:1.5rem; padding:0;" onclick="closeModal('adModal')">&times;</button>
+        </div>
+        
+        <div class="modal-tabs">
+            <button class="tab-btn active" onclick="switchTab(event, 'tab-config')">1. Configuración</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-audience')">2. Público</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-results')" id="tabResultsBtn" style="display:none;">3. Resultados</button>
+        </div>
+
+        <form id="adsForm" onsubmit="saveAd(event)">
+            <input type="hidden" id="adId">
+            <input type="hidden" id="adPostId">
+            
+            <div class="modal-body">
+                
+                <div id="tab-config" class="tab-content active">
+                    <div class="form-group">
+                        <label>Nombre de la Campaña / Título</label>
+                        <input type="text" id="adName" required placeholder="Ej: Promo Fertilizantes Q1">
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Plataforma Origen</label>
+                            <select id="adPlatform">
+                                <option value="Meta">Meta (Facebook/Instagram)</option>
+                                <option value="Google">Google Ads</option>
+                                <option value="TikTok">TikTok Ads</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ubicación Específica</label>
+                            <input type="text" id="adPlacement" placeholder="Ej: IG Reels, Buscador Google">
+                        </div>
+                    </div>
+
+                    <hr style="border-top:1px dashed #d1d5db; margin:20px 0;">
+
+                    <div class="grid-3">
+                        <div class="form-group"><label>Fecha Inicio</label><input type="date" id="adStartDate" required onchange="calculateBudget()"></div>
+                        <div class="form-group"><label>Fecha Fin</label><input type="date" id="adEndDate" onchange="calculateBudget()"></div>
+                        <div class="form-group">
+                            <label style="margin-top: 25px; display:flex; align-items:center; gap:8px;">
+                                <input type="checkbox" id="adContinuous" style="width:auto;" onchange="calculateBudget()"> Campaña Continua
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="grid-2" style="align-items: center;">
+                        <div class="form-group" style="margin:0;">
+                            <label>Presupuesto Diario ($)</label>
+                            <input type="number" step="0.5" id="adDailyBudget" required placeholder="Ej: 5.00" oninput="calculateBudget()">
+                        </div>
+                        <div class="budget-preview">
+                            <span style="font-size:0.8rem; text-transform:uppercase; font-weight:bold; color:#6b7280;">Inversión Total Estimada</span>
+                            <h4 id="displayTotalBudget">$ 0.00</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-audience" class="tab-content">
+                    <div class="form-group" style="background: #f8fafc; padding: 15px; border: 1px solid #e5e7eb; border-radius: 8px;">
+                        <label style="color:#0d6efd;"><i class="bi bi-bookmark-star"></i> Usar un Público Guardado</label>
+                        <select id="savedAudienceSelector" onchange="loadSavedAudienceIntoAd(this.value)">
+                            <option value="">-- Crear segmentación personalizada para este anuncio --</option>
+                        </select>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group"><label>Rango de Edad</label><input type="text" id="audAge" placeholder="Ej: 25 - 55"></div>
+                        <div class="form-group"><label>Género</label><input type="text" id="audGender" placeholder="Ej: Hombres / Mixto"></div>
+                    </div>
+                    <div class="form-group"><label>Ubicación Geográfica</label><input type="text" id="audLocation" placeholder="Ej: Venezuela, Carabobo"></div>
+                    <div class="form-group"><label>Segmentación Detallada (Intereses)</label><textarea id="audInterests" rows="2" placeholder="Ganadería, Agricultura técnica..."></textarea></div>
+                    
+                    <div class="form-group" style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="saveAudienceOnTheFly" style="width: auto;" onchange="document.getElementById('newAudienceNameDiv').style.display = this.checked ? 'block' : 'none'">
+                        <label for="saveAudienceOnTheFly" style="margin:0; font-weight:normal; text-transform:none; font-size:0.9rem;">Guardar esta segmentación en mi lista de Públicos</label>
+                    </div>
+                    <div class="form-group" id="newAudienceNameDiv" style="display:none;">
+                        <input type="text" id="newAudienceName" placeholder="Asigna un nombre a este público (Ej: Ganaderos Aragua)">
+                    </div>
+                </div>
+
+                <div id="tab-results" class="tab-content">
+                    <div class="grid-2">
+                        <div class="form-group"><label>Impresiones / Alcance</label><input type="number" id="resImpressions"></div>
+                        <div class="form-group"><label>Clics Obtenidos</label><input type="number" id="resClicks"></div>
+                        <div class="form-group"><label>Costo por Clic (CPC) $</label><input type="number" step="0.01" id="resCpc"></div>
+                        <div class="form-group"><label>CTR (%)</label><input type="number" step="0.01" id="resCtr"></div>
+                    </div>
+                    
+                    <hr style="border-top:1px dashed #d1d5db; margin:20px 0;">
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Tu Evaluación (Publicista)</label>
+                            <select id="evalManual">
+                                <option value="">Selecciona...</option>
+                                <option value="Exitosa 🔥">Exitosa 🔥</option>
+                                <option value="Buena 👍">Buena 👍</option>
+                                <option value="Media 😐">Regular 😐</option>
+                                <option value="Mala 📉">Mala 📉</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e5e7eb;">
+                            <label>Veredicto del Sistema AI</label>
+                            <div id="evalSystem" style="font-size:1.1rem; font-weight:800; color:#0d6efd; margin-top:5px;">Pendiente de datos...</div>
+                            <small style="color:#6b7280;">Basado en medias de CTR y CPC.</small>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-outline" onclick="closeModal('adModal')">Cancelar</button>
+                <button type="button" class="btn-outline" style="background:#fef2f2; color:#b91c1c; border-color:#fca5a5; display:none;" id="btnStopAd" onclick="stopCampaign()">Detener Campaña</button>
+                <button type="submit" class="btn-primary" id="btnSaveAd">Guardar Campaña</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="cancelAdModal">
+    <div class="modal-box" style="max-width: 500px;">
+        <div class="modal-header" style="background: #fef2f2; border-bottom-color: #fca5a5;">
+            <h3 style="color:#b91c1c;"><i class="bi bi-x-circle-fill me-2"></i> Cancelar Pauta</h3>
+            <button type="button" class="btn-outline" style="border:none; font-size:1.5rem; padding:0; color:#b91c1c;" onclick="closeModal('cancelAdModal')">&times;</button>
+        </div>
+        <form id="cancelAdForm" onsubmit="confirmCancelAd(event)">
+            <input type="hidden" id="cancelPostId">
+            <div class="modal-body">
+                <p style="color:#4b5563; margin-top:0;">Vas a cancelar la pauta publicitaria para el post: <br><strong id="cancelAdTitle" style="color:#111827;"></strong></p>
+                
+                <div class="form-group">
+                    <label>Razón de cancelación (Notas para el futuro)</label>
+                    <textarea id="cancelAdReason" rows="4" required placeholder="Ej: Se acabó el presupuesto, la imagen no se aprobó a tiempo, cambio de estrategia..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-outline" onclick="closeModal('cancelAdModal')">Volver</button>
+                <button type="submit" class="btn-danger">Confirmar Cancelación</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="audienceManagerModal">
+    <div class="modal-box" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3><i class="bi bi-people-fill text-primary me-2"></i> Públicos Guardados</h3>
+            <button type="button" class="btn-outline" style="border:none; font-size:1.5rem; padding:0;" onclick="closeModal('audienceManagerModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+                <h4 style="margin:0 0 15px 0; font-size: 0.95rem;">Crear Nuevo Público</h4>
+                <form id="newAudienceForm" onsubmit="createNewAudienceDirectly(event)">
+                    <div class="form-group"><input type="text" id="mgrAudName" required placeholder="Nombre (Ej: Productores Arroz)"></div>
+                    <div class="grid-2">
+                        <div class="form-group"><input type="text" id="mgrAudAge" required placeholder="Edad (Ej: 25-50)"></div>
+                        <div class="form-group"><input type="text" id="mgrAudGender" required placeholder="Género"></div>
+                    </div>
+                    <div class="form-group"><input type="text" id="mgrAudLocation" required placeholder="Ubicación"></div>
+                    <div class="form-group"><input type="text" id="mgrAudInterests" required placeholder="Intereses separados por coma"></div>
+                    <button type="submit" class="btn-success w-100" style="width:100%;"><i class="bi bi-save"></i> Guardar Público</button>
+                </form>
+            </div>
+            <hr style="border-top:1px dashed #d1d5db; margin:20px 0;">
+            <h4 style="margin:0 0 15px 0; font-size: 0.95rem;">Tus Públicos Activos</h4>
+            <div id="audienceListContainer"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-outline" onclick="closeModal('audienceManagerModal')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="redirectCalendarModal">
+    <div class="modal-box" style="max-width: 450px; text-align: center;">
+        <div class="modal-header" style="justify-content: flex-end; border: none; padding-bottom: 0; background: white;">
+            <button type="button" class="btn-outline" style="border:none; font-size:1.5rem; padding:0; color:#9ca3af;" onclick="closeModal('redirectCalendarModal')">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 10px 30px 30px; overflow: hidden;">
+            <div style="background: #fef2f2; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <i class="bi bi-calendar-x" style="font-size: 2.5rem; color: #ef4444;"></i>
+            </div>
+            <h3 style="margin: 0 0 15px 0; color: #111827;">Reagendar Publicación</h3>
+            <p style="color:#6b7280; font-size: 0.95rem; line-height: 1.6; margin: 0;">
+                Para cambiar la fecha de un anuncio vencido, debes hacerlo directamente desde el <strong>Calendario Editorial</strong>. Así mantenemos la estrategia sincronizada. ¿Deseas ir allá ahora?
+            </p>
+        </div>
+        <div class="modal-footer" style="justify-content: center; background: white; border-top: none; padding-top: 0; padding-bottom: 30px;">
+            <button type="button" class="btn-outline" onclick="closeModal('redirectCalendarModal')">Mejor luego</button>
+            <button type="button" class="btn-primary" onclick="window.location.href='mkt_calendar.html'"><i class="bi bi-arrow-right-circle me-2"></i> Ir al Calendario</button>
+        </div>
+    </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/mkt_ads.js"></script>
+</body>
+</html>

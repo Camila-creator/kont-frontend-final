@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contactar a Soporte | Kont Admin </title>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+      .support-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: start; }
+      @media (max-width: 900px) { .support-grid { grid-template-columns: 1fr; } }
+      
+      .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
+      .form-group label { font-weight: 600; color: #475569; font-size: 0.85rem; }
+      .form-group input, .form-group select, .form-group textarea { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; transition: border 0.3s; font-family: inherit; }
+      .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #3b82f6; }
+      
+      .ticket-table th { background: #f8fafc; color: #475569; font-size: 0.85rem; text-transform: uppercase; padding: 12px; }
+      .ticket-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; color: #1e293b; }
+      
+      /* Badges */
+      .badge { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; display: inline-block; text-transform: uppercase; }
+      .status-pendiente { background: #fee2e2; color: #dc2626; }
+      .status-proceso { background: #e0f2fe; color: #0284c7; }
+      .status-resuelto { background: #dcfce7; color: #16a34a; }
+
+      /* Estilos base para los modales (aseguramos que funcionen) */
+.modal.hidden { display: none !important; }
+
+/* Animación de spin para el botón cargando */
+.spin {
+    display: inline-block;
+    animation: rotate 1s linear infinite;
+}
+@keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* === MEDIA QUERY PARA MÓVIL (Solución al Scroll Horizontal) === */
+@media (max-width: 900px) {
+    .support-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px;
+    }
+
+    .page { padding: 15px !important; }
+
+    /* Transformación de la tabla a Tarjetas */
+    .ticket-table thead { display: none; } /* Escondemos cabeceras */
+
+    .ticket-table, .ticket-table tbody, .ticket-table tr, .ticket-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .ticket-table tr {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .ticket-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 5px !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        text-align: right;
+    }
+
+    .ticket-table td:last-child { border-bottom: none !important; }
+
+    /* Inyección de etiquetas a la izquierda */
+    .ticket-table td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: #94a3b8;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        text-align: left;
+    }
+
+    /* Ajuste especial para el Asunto (que ocupe más espacio) */
+    .ticket-table td[data-label="Asunto"] {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+        padding-top: 12px !important;
+    }
+
+    .ticket-table td[data-label="Asunto"]::before { margin-bottom: 2px; }
+
+    .ticket-table td[colspan="5"] {
+        display: block !important; /* Rompemos el flex solo aquí */
+        text-align: center !important;
+        width: 100% !important;
+        padding: 40px 20px !important;
+        color: #94a3b8;
+    }
+
+    /* Quitamos la etiqueta vacía que genera el data-label en este caso */
+    .ticket-table td[colspan="5"]::before {
+        content: none !important;
+}
+}
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebar"></div>
+  <div class="content">
+    <div id="header"></div>
+
+    <div class="page" style="padding: 25px; background: #f8fafc; min-height: calc(100vh - 70px);">
+      <div class="page-header" style="margin-bottom: 25px;">
+        <h1 style="margin: 0; color: #1e293b; font-weight: 800;"><i class="bi bi-life-preserver" style="color: #3b82f6;"></i> Ayuda Técnica</h1>
+        <p style="color: #64748b; margin-top: 5px;">¿Tienes algún problema o sugerencia? Nuestro equipo está listo para ayudarte.</p>
+      </div>
+
+      <div class="support-grid">
+          <div class="card" style="background: white; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+              <h2 style="margin-top: 0; font-size: 1.1rem; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;"><i class="bi bi-send"></i> Enviar nuevo reporte</h2>
+              
+              <form id="ticket-form">
+                  <div class="form-group">
+                      <label>Asunto (Resumen corto) *</label>
+                      <input type="text" id="ticket-subject" placeholder="Ej. Error al imprimir factura" required maxlength="100">
+                  </div>
+
+                  <div class="form-group">
+                      <label>Nivel de Prioridad *</label>
+                      <select id="ticket-priority" required>
+                          <option value="BAJA">🟢 Baja (Sugerencia o duda general)</option>
+                          <option value="MEDIA">🟡 Media (Falla menor, no detiene el trabajo)</option>
+                          <option value="ALTA">🔴 Alta (Falla crítica, no puedo trabajar)</option>
+                      </select>
+                  </div>
+
+                  <div class="form-group">
+                      <label>Descripción detallada del problema *</label>
+                      <textarea id="ticket-message" rows="5" placeholder="Explica qué estabas haciendo y qué error te salió. Si es posible, da detalles específicos." required></textarea>
+                  </div>
+
+                  <button type="submit" class="btn-primary" style="width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; background: #3b82f6; color: white; cursor: pointer;">
+                      <i class="bi bi-send-fill"></i> Enviar Ticket a Soporte
+                  </button>
+              </form>
+          </div>
+
+          <div class="card" style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.02); overflow: hidden;">
+              <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                  <h2 style="margin: 0; font-size: 1.1rem; color: #0f172a;"><i class="bi bi-clock-history"></i> Mis Tickets Recientes</h2>
+              </div>
+              
+              <div style="overflow-x: auto; max-height: 400px; overflow-y: auto;">
+                  <table class="ticket-table" id="my-tickets-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                      <tr>
+                        <th>Ticket</th>
+                        <th>Asunto</th>
+                        <th style="text-align: center;">Prioridad</th>
+                        <th style="text-align: center;">Estado</th>
+                        <th style="text-align: right;">Fecha</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td colspan="5" style="text-align: center; padding: 20px;"><i class="bi bi-arrow-repeat spin"></i> Cargando mis tickets...</td></tr>
+                    </tbody>
+                  </table>
+              </div>
+          </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="success-modal" style="z-index: 1050; display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+  <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 16px; background: white; padding: 30px;">
+    <div style="font-size: 4rem; color: #10b981; margin-bottom: 10px; line-height: 1;"><i class="bi bi-check-circle-fill"></i></div>
+    <h2 style="margin-top: 0; color: #0f172a; font-weight: 800;">¡Ticket Enviado!</h2>
+    <p style="color: #64748b; margin-bottom: 25px; font-size: 0.95rem;">Hemos recibido tu reporte exitosamente. Nuestro equipo de soporte técnico te contactará muy pronto.</p>
+    <button id="btn-close-success" style="background: #3b82f6; border: none; width: 100%; padding: 12px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: 0.2s;">Entendido</button>
+  </div>
+</div>
+
+<div class="modal hidden" id="error-modal" style="z-index: 1050; display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+  <div class="modal-content" style="max-width: 400px; text-align: center; border-radius: 16px; background: white; padding: 30px;">
+    <div style="font-size: 4rem; color: #ef4444; margin-bottom: 10px; line-height: 1;"><i class="bi bi-x-circle-fill"></i></div>
+    <h2 style="margin-top: 0; color: #0f172a; font-weight: 800;">Ups, un problema</h2>
+    <p id="error-msg" style="color: #64748b; margin-bottom: 25px; font-size: 0.95rem;">Error al procesar la solicitud.</p>
+    <button id="btn-close-error" style="background: #f1f5f9; border: 1px solid #cbd5e1; width: 100%; padding: 12px; border-radius: 8px; color: #475569; font-weight: bold; cursor: pointer; transition: 0.2s;">Cerrar</button>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/contactar_soporte.js"></script>
+
+</body>
+</html>

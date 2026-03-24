@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Agromedic SaaS</title>
+  <script>
+    // Revisamos si ya hay un token guardado
+    const token = localStorage.getItem('agromedic_token');
+    if (token) {
+      window.location.replace('./pages/dashboard.html');
+    } else {
+      window.location.replace('./pages/login.html');
+    }
+  </script>
+</head>
+<body>
+  </body>
+</html>

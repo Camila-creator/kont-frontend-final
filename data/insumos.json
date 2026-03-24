@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "name": "Envase 500ml",
+    "category": "EMPAQUE",
+    "supplierId": 1,
+    "unit": "UNIDAD",
+    "cost": 0.35,
+    "stock": 200,
+    "minStock": 50
+  },
+  {
+    "id": 2,
+    "name": "Etiqueta 500ml",
+    "category": "ETIQUETA",
+    "supplierId": 1,
+    "unit": "UNIDAD",
+    "cost": 0.08,
+    "stock": 400,
+    "minStock": 80
+  },
+  {
+    "id": 3,
+    "name": "Base shampoo",
+    "category": "QUIMICO",
+    "supplierId": 1,
+    "unit": "L",
+    "cost": 6.50,
+    "stock": 25,
+    "minStock": 5
+  },
+  {
+    "id": 4,
+    "name": "Fragancia lavanda",
+    "category": "INGREDIENTE",
+    "supplierId": 1,
+    "unit": "ML",
+    "cost": 0.02,
+    "stock": 3500,
+    "minStock": 500
+  }
+]

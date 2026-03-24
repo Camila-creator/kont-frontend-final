@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Clientes | Kont Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    /* ESTILOS PREMIUM PARA CLIENTES */
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; background: white; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+    
+    .search-box { display: flex; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 5px 15px; min-width: 300px; flex-grow: 1; max-width: 500px;}
+    .search-box i { color: #94a3b8; margin-right: 10px; }
+    .search-box input { border: none; outline: none; width: 100%; padding: 8px 0; font-size: 0.95rem; background: transparent;}
+
+    /* Badges de Tipo de Cliente */
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; text-transform: uppercase;}
+    .badge-retail { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;}
+    .badge-mayor { background: #f3e8ff; color: #a855f7; border: 1px solid #e9d5ff;}
+    
+    .badge-credito { background: #ffedd5; color: #ea580c; }
+    .badge-contado { background: #dcfce7; color: #16a34a; }
+
+    /* Formulario en Grid */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+    .full-width { grid-column: span 2; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-weight: 600; color: #475569; font-size: 0.85rem; }
+    .form-group input, .form-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; transition: border 0.3s; background: #f8fafc;}
+    .form-group input:focus, .form-group select:focus { border-color: #10b981; background: white;}
+
+    .table-actions { display: flex; gap: 8px; justify-content: center;}
+    .btn-icon { padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; color: white; font-size: 1rem;}
+    .btn-edit { background: #3b82f6; }
+    .btn-del { background: #ef4444; }
+
+    .contact-cell { display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem;}
+    .contact-cell span { display: flex; align-items: center; gap: 5px; color: #64748b;}
+    .contact-cell b { color: #1e293b; font-size: 0.9rem;}
+
+    /* RESPONSIVE: CLIENT LIST SLIM MODE */
+@media (max-width: 768px) {
+    .top-bar { flex-direction: column; align-items: stretch; padding: 10px; }
+    .search-box { min-width: 100%; }
+    
+    /* Escondemos la cabecera de la tabla */
+    #clients-table thead { display: none; }
+    
+    #clients-table, #clients-table tbody, #clients-table tr, #clients-table td {
+        display: block;
+        width: 100%;
+    }
+
+    #clients-table tr {
+        background: white;
+        margin-bottom: 8px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        padding: 12px;
+        display: grid;
+        grid-template-columns: 1fr auto; /* Info a la izquierda, botones a la derecha */
+        align-items: center;
+    }
+
+    #clients-table td {
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    /* Ocultamos el ID en móvil para limpiar la vista */
+    #clients-table td[data-label="ID"] { display: none; }
+
+    /* Nombre del Cliente Principal */
+    #clients-table td[data-label="Nombre"] {
+        grid-column: 1;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 4px;
+    }
+
+    /* Los badges y el contacto en una sola línea pequeña */
+    #clients-table td[data-label="Tipo"],
+    #clients-table td[data-label="Condición"],
+    #clients-table td[data-label="Contacto"] {
+        grid-column: 1;
+        display: inline-flex;
+        align-items: center;
+        margin-right: 10px;
+        font-size: 0.75rem;
+    }
+
+    /* Ajuste para los iconos de contacto en móvil */
+    .contact-cell {
+        flex-direction: row !important;
+        gap: 10px !important;
+    }
+    .contact-cell span b { display: none; } /* Ocultamos etiquetas "tel:" para ahorrar espacio */
+
+    /* Contenedor de Acciones (Botones) */
+    #clients-table td:last-child {
+        grid-column: 2;
+        grid-row: 1 / 4; /* Que cubra toda la altura de la fila */
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        justify-content: center;
+        border-left: 1px solid #f1f5f9 !important;
+        padding-left: 12px !important;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+
+    /* Formulario: Forzamos una sola columna */
+    .form-grid { grid-template-columns: 1fr; }
+    .full-width { grid-column: span 1; }
+}
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebar"></div>
+  <div class="content">
+    <div id="header"></div>
+
+    <div class="page" style="padding: 25px; background: #f8fafc; min-height: calc(100vh - 70px);">
+
+      <div class="page-header" style="margin-bottom: 20px;">
+        <h1 style="margin: 0; color: #1e293b; font-weight: 800;">👥 Directorio de Clientes</h1>
+        <p style="color: #64748b; margin-top: 5px;">Gestiona la cartera de clientes, tipos de precios y condiciones comerciales.</p>
+      </div>
+
+      <div class="top-bar">
+        <div class="search-box">
+          <i class="bi bi-search"></i>
+          <input id="client-search" type="text" placeholder="Buscar por nombre, RIF, teléfono o ciudad...">
+        </div>
+        <button id="btn-new-client" class="btn-primary" style="padding: 10px 20px; font-weight: bold; border-radius: 8px;">
+          <i class="bi bi-person-plus-fill"></i> Nuevo Cliente
+        </button>
+      </div>
+
+      <div class="card" style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); overflow-x: auto; border: 1px solid #e2e8f0; padding: 0;">
+        <table class="table" id="clients-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead style="background: #f1f5f9; color: #475569; font-size: 0.85rem; text-transform: uppercase;">
+            <tr>
+              <th style="padding: 15px; width: 60px;">ID</th>
+              <th style="padding: 15px;">Nombre / Razón Social</th>
+              <th style="padding: 15px; text-align: center;">Tipo</th>
+              <th style="padding: 15px;">Documento / RIF</th>
+              <th style="padding: 15px;">Contacto & Ubicación</th>
+              <th style="padding: 15px; text-align: center;">Condición</th>
+              <th style="padding: 15px; text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody style="color: #334155; font-size: 0.9rem;">
+            </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="client-modal">
+  <div class="modal-content" style="max-width: 650px; border-radius: 16px;">
+    <h2 id="client-modal-title" style="margin-top: 0; color: #1e293b; font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">Nuevo Cliente</h2>
+
+    <form id="client-form">
+      <input type="hidden" id="client-id">
+
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label>Nombre Completo / Razón Social *</label>
+          <input type="text" id="client-name" placeholder="Ej: Inversiones El Toro C.A." required>
+        </div>
+
+        <div class="form-group">
+          <label>Tipo de Cliente *</label>
+          <select id="client-type" required>
+            <option value="">Selecciona...</option>
+            <option value="RETAIL">Detal (Retail)</option>
+            <option value="MAYORISTA">Mayorista</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>RIF / Cédula</label>
+          <input type="text" id="client-doc" placeholder="V-12345678 / J-12345678-0">
+        </div>
+
+        <div class="form-group">
+          <label>Teléfono de Contacto</label>
+          <input type="text" id="client-phone" placeholder="0412-0000000">
+        </div>
+
+        <div class="form-group">
+          <label>Correo Electrónico</label>
+          <input type="email" id="client-email" placeholder="cliente@correo.com">
+        </div>
+
+        <div class="form-group">
+          <label>Ciudad / Estado</label>
+          <input type="text" id="client-location" placeholder="Valencia, Carabobo">
+        </div>
+
+        <div class="form-group">
+          <label>Condición Comercial</label>
+          <select id="client-terms">
+            <option value="CONTADO">Venta al Contado</option>
+            <option value="CREDITO">Línea de Crédito</option>
+          </select>
+        </div>
+
+        <div class="form-group full-width">
+          <label>Dirección Física Completa</label>
+          <input type="text" id="client-address" placeholder="Av. Principal, local #5...">
+        </div>
+
+        <div class="form-group">
+          <label>Mínimo Mayorista (Unidades)</label>
+          <input type="number" id="client-wholesale-min" min="0" step="1" value="6">
+        </div>
+
+        <div class="form-group">
+          <label>Notas Internas</label>
+          <input type="text" id="client-notes" placeholder="Ej: Pago siempre puntual...">
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+        <button type="button" id="client-cancel" class="btn-secondary" style="border-radius: 8px;">Cancelar</button>
+        <button type="submit" class="btn-primary" style="border-radius: 8px;">Guardar Cliente</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal hidden" id="confirm-modal">
+  <div class="modal-content" style="max-width: 400px; text-align: center;">
+    <div style="font-size: 3rem; color: #ef4444; margin-bottom: 10px;"><i class="bi bi-exclamation-triangle"></i></div>
+    <h2 id="confirm-title" style="margin-top: 0;">Confirmar</h2>
+    <p id="confirm-message" class="text-soft" style="margin: 10px 0 20px;">¿Estás segura?</p>
+    <div class="modal-actions" style="justify-content: center;">
+      <button type="button" class="btn-secondary" id="confirm-cancel">No, cancelar</button>
+      <button type="button" class="btn-danger" id="confirm-ok">Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="alert-modal">
+  <div class="modal-content" style="max-width: 400px; text-align: center;">
+    <h2 id="alert-title" style="margin-top: 0;">Aviso</h2>
+    <p id="alert-message" class="text-soft" style="margin: 10px 0 20px;">Mensaje</p>
+    <div class="modal-actions" style="justify-content: center;">
+      <button type="button" class="btn-primary" id="alert-ok" style="width: 100%;">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/clientes.js"></script>
+</body>
+</html>

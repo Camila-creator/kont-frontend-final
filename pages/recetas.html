@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Recetas y Fórmulas | Kont Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../assets/css/main.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    /* ESTILOS PREMIUM PARA RECETAS */
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; background: white; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+    .filters-wrapper { display: flex; gap: 15px; flex-wrap: wrap; flex-grow: 1; align-items: center; }
+    
+    .search-box { display: flex; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 5px 15px; min-width: 250px; flex-grow: 1;}
+    .search-box i { color: #94a3b8; margin-right: 10px; }
+    .search-box input { border: none; outline: none; width: 100%; padding: 8px 0; font-size: 0.95rem; background: transparent;}
+
+    /* Badges de Estado */
+    .badge { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;}
+    .badge-ok { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0;}
+    .badge-missing { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca;}
+    .badge-info { background: #e0f2fe; color: #0284c7; }
+
+    /* Estilos de Formulario (Grid) */
+    .form-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-top: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-weight: 600; color: #475569; font-size: 0.85rem; }
+    .form-group input, .form-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; outline: none; transition: border 0.3s; background: white;}
+    .form-group input:focus, .form-group select:focus { border-color: #10b981; }
+
+    /* Panel de armado de ingredientes */
+    .recipe-builder { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-top: 20px; }
+    .builder-controls { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 15px;}
+    
+    .table-actions { display: flex; gap: 8px; justify-content: center;}
+    .btn-icon { padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; color: white; font-size: 1rem; display: inline-flex; justify-content: center; align-items: center;}
+    .btn-edit { background: #3b82f6; } .btn-edit:hover { background: #2563eb; }
+    .btn-del { background: #ef4444; } .btn-del:hover { background: #dc2626; }
+    .btn-add { background: #10b981; } .btn-add:hover { background: #059669; }
+
+    /* Sub-tabla de ingredientes */
+    .sub-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;}
+    .sub-table th { background: #f1f5f9; color: #64748b; font-size: 0.8rem; text-transform: uppercase; padding: 10px 15px; text-align: left;}
+    .sub-table td { padding: 10px 15px; border-top: 1px solid #f1f5f9; color: #334155; font-size: 0.9rem; font-weight: 500;}
+
+    @media (max-width: 768px) {
+    /* 1. CABECERA Y BUSCADOR (Consistencia con los otros módulos) */
+    .page { padding: 10px !important; }
+    .page-header h1 { font-size: 1.2rem !important; text-align: center; }
+    .page-header p { display: none; }
+
+    .top-bar { 
+        flex-direction: column; 
+        align-items: center; 
+        background: transparent; 
+        border: none; 
+        box-shadow: none;
+        padding: 10px 0;
+    }
+
+    .filters-wrapper { width: 100%; }
+    .search-box { width: 100%; height: 45px; }
+    .search-box input { text-align: center; }
+
+    #btn-new-recipe {
+        width: 100%;
+        max-width: 400px;
+        height: 48px;
+        background: #3b82f6 !important; /* Azul Kont */
+        border-radius: 12px;
+        margin-top: 10px;
+        justify-content: center;
+    }
+
+    /* 2. TABLA PRINCIPAL A TARJETAS */
+    #recipes-table thead { display: none; }
+    #recipes-table, #recipes-table tbody, #recipes-table tr, #recipes-table td {
+        display: block;
+        width: 100%;
+    }
+
+    #recipes-table tbody tr {
+        background: white;
+        margin-bottom: 10px;
+        padding: 15px;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        position: relative;
+    }
+
+    /* Producto Final */
+    #recipes-table td:nth-child(1) {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 8px;
+        padding: 0;
+    }
+
+    /* Estado (Badge arriba a la derecha) */
+    #recipes-table td:nth-child(4) {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: auto;
+        padding: 0;
+    }
+
+    /* Insumos y Merma (En la misma línea) */
+    #recipes-table td:nth-child(2),
+    #recipes-table td:nth-child(3) {
+        display: inline-block;
+        width: auto;
+        padding: 0;
+        margin-right: 15px;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+
+    #recipes-table td:nth-child(3):before { content: "Merma: "; font-weight: 600; }
+
+    /* Acciones */
+    #recipes-table td:last-child {
+        margin-top: 15px;
+        padding-top: 12px;
+        border-top: 1px solid #f1f5f9;
+        
+        /* Esto es lo que falta para que el gap funcione */
+        display: flex !important; 
+        flex-direction: row !important;
+        justify-content: center !important;
+        gap: 15px !important; 
+    }
+
+    /* 3. MODAL Y RECIPE BUILDER (LA PARTE CRÍTICA) */
+    .modal-content { 
+        width: 95% !important; 
+        max-height: 90vh; 
+        overflow-y: auto; 
+        padding: 20px 15px; 
+    }
+
+    .form-grid { grid-template-columns: 1fr; gap: 10px; }
+
+    .recipe-builder { padding: 12px; border-radius: 10px; }
+
+    .builder-controls { 
+        flex-direction: column; 
+        align-items: stretch; 
+        gap: 12px;
+    }
+
+    .builder-controls .form-group { min-width: 100%; }
+
+    #btn-add-raw {
+        width: 100%;
+        height: 45px;
+        background: #10b981 !important;
+        border-radius: 8px;
+    }
+
+    /* Sub-tabla de ingredientes en móvil */
+    .sub-table thead { display: none; }
+    .sub-table tr {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 10px;
+        border-bottom: 1px solid #f1f5f9;
+        align-items: center;
+    }
+
+    .sub-table td:nth-child(1) { flex: 2; font-weight: 700; font-size: 0.9rem; } /* Nombre Insumo */
+    .sub-table td:nth-child(2) { flex: 1; text-align: right; color: #059669; font-weight: 800; } /* Cantidad */
+    .sub-table td:nth-child(3) { flex: 0.5; font-size: 0.7rem; color: #94a3b8; } /* Unidad */
+    .sub-table td:nth-child(4) { width: 40px; text-align: right; } /* Botón eliminar */
+
+    .modal-actions {
+        display: flex !important;
+        flex-direction: column-reverse !important; /* Guardar arriba, Cancelar abajo */
+        gap: 12px !important;
+        margin-top: 25px !important;
+        border-top: 1px solid #e2e8f0 !important;
+        padding-top: 15px !important;
+    }
+    
+    .modal-actions button { 
+        width: 100% !important; 
+        height: 50px !important; 
+        font-weight: 700 !important;
+        margin: 0 !important; /* Quita márgenes extra que mete Bootstrap o main.css */
+    }
+
+    /* Mensaje "Sin ingredientes" centrado */
+    .empty-recipe-msg {
+        display: block !important;
+        width: 100% !important;
+        text-align: center !important;
+        padding: 20px 0 !important;
+        color: #94a3b8 !important;
+        font-style: italic !important;
+    }
+}
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebar"></div>
+  <div class="content">
+    <div id="header"></div>
+
+    <div class="page" style="padding: 25px; background: #f8fafc; min-height: calc(100vh - 70px);">
+
+      <div class="page-header" style="margin-bottom: 20px;">
+        <h1 style="margin: 0; color: #1e293b; font-weight: 800;">📖 Fórmulas y Recetas</h1>
+        <p style="color: #64748b; margin-top: 5px;">Asigna la materia prima y merma necesaria para producir cada artículo.</p>
+      </div>
+
+      <div class="top-bar">
+        <div class="filters-wrapper">
+          <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input id="recipes-search" type="text" placeholder="Buscar producto (ej: shampoo, vacuna)...">
+          </div>
+          <button id="recipes-clear" class="btn-secondary" style="padding: 8px 15px; border-radius: 8px;" title="Limpiar"><i class="bi bi-eraser"></i></button>
+        </div>
+
+        <button id="btn-new-recipe" class="btn-primary" style="padding: 10px 20px; font-weight: bold; border-radius: 8px; white-space: nowrap;">
+          <i class="bi bi-plus-lg"></i> Crear Fórmula
+        </button>
+      </div>
+
+      <div class="card" style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); overflow-x: auto; border: 1px solid #e2e8f0;">
+        <table class="table" id="recipes-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead style="background: #f1f5f9; color: #475569; font-size: 0.85rem; text-transform: uppercase;">
+            <tr>
+              <th style="padding: 15px;">Producto Final</th>
+              <th style="padding: 15px; text-align: center;">Insumos Req.</th>
+              <th style="padding: 15px; text-align: center;">Merma Est.</th>
+              <th style="padding: 15px;">Estado</th>
+              <th style="padding: 15px; text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody style="color: #334155; font-size: 0.9rem;">
+            </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="recipe-modal">
+  <div class="modal-content" style="max-width: 700px; border-radius: 16px;">
+    
+    <h2 id="recipe-modal-title" style="margin-top: 0; color: #1e293b; font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">Nueva Fórmula</h2>
+
+    <form id="recipe-form">
+      <input type="hidden" id="recipe-product-id">
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Producto a Fabricar *</label>
+          <select id="recipe-product" required>
+            <option value="">Cargando productos...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Merma Estimada (%)</label>
+          <div style="position: relative;">
+            <input id="recipe-waste" type="number" min="0" step="0.01" value="2" style="width: 100%;">
+            <span style="position: absolute; right: 15px; top: 10px; color: #94a3b8; font-weight: bold;">%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="recipe-builder">
+        <h3 style="margin-top: 0; font-size: 1rem; color: #334155; margin-bottom: 15px;"><i class="bi bi-funnel"></i> Ingredientes de la Fórmula</h3>
+        
+        <div class="builder-controls">
+          <div class="form-group" style="flex: 2; min-width: 250px;">
+            <label>Insumo (Materia Prima)</label>
+            <select id="recipe-raw">
+              <option value="">Selecciona insumo...</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="flex: 1; min-width: 120px;">
+            <label>Cant. (por unidad)</label>
+            <input id="recipe-raw-qty" type="number" min="0" step="0.01" placeholder="Ej: 480">
+          </div>
+
+          <button id="btn-add-raw" class="btn-icon btn-add" type="button" style="height: 42px; padding: 0 20px; font-weight: bold; border-radius: 6px;">
+            <i class="bi bi-plus-lg" style="margin-right: 5px;"></i> Añadir
+          </button>
+        </div>
+
+        <table class="sub-table" id="recipe-items-table">
+          <thead>
+            <tr>
+              <th>Insumo Seleccionado</th>
+              <th>Cantidad</th>
+              <th>Medida</th>
+              <th style="text-align: center;">Quitar</th>
+            </tr>
+          </thead>
+          <tbody>
+            </tbody>
+        </table>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+        <button type="button" id="recipe-cancel" class="btn-secondary" style="border-radius: 8px;">Cancelar</button>
+        <button type="submit" class="btn-primary" style="border-radius: 8px;"><i class="bi bi-save"></i> Guardar Fórmula</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal hidden" id="confirm-modal">
+  <div class="modal-content" style="max-width: 400px; text-align: center;">
+    <div style="font-size: 3rem; color: #ef4444; margin-bottom: 10px;"><i class="bi bi-exclamation-circle"></i></div>
+    <h2 id="confirm-title" style="margin-top: 0;">Confirmar</h2>
+    <p id="confirm-message" class="text-soft" style="margin: 10px 0 20px;">¿Estás segura?</p>
+    <div class="modal-actions" style="justify-content: center;">
+      <button type="button" class="btn-secondary" id="confirm-cancel">No, cancelar</button>
+      <button type="button" class="btn-danger" id="confirm-ok">Sí, confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="alert-modal">
+  <div class="modal-content" style="max-width: 400px; text-align: center;">
+    <h2 id="alert-title" style="margin-top: 0;">Aviso</h2>
+    <p id="alert-message" class="text-soft" style="margin: 10px 0 20px;">Mensaje</p>
+    <div class="modal-actions" style="justify-content: center;">
+      <button type="button" class="btn-primary" id="alert-ok" style="width: 100%;">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/recetas.js"></script>
+</body>
+</html>

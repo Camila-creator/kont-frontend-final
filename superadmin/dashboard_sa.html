@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Súper Admin | Kont </title>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+      .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
+      .kpi-card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 15px; }
+      .kpi-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; }
+      
+      .panels-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+      
+      .alert-box { background: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; border-radius: 0 8px 8px 0; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
+      .alert-warning { background: #fffbeb; border-left-color: #f59e0b; }
+      
+      .list-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+      .list-item:last-child { border-bottom: none; }
+
+      /* --- DASHBOARD MONITORIZACIÓN RESPONSIVE --- */
+@media (max-width: 992px) {
+    /* 1. Ajuste del Layout Principal */
+    .page {
+        padding: 15px !important; /* Menos espacio en los bordes para ganar pantalla */
+    }
+
+    /* 2. Re-distribución de los Paneles (De 2 columnas a 1) */
+    .panels-grid {
+        grid-template-columns: 1fr; /* Apilamos las alertas sobre los vencimientos */
+        gap: 15px;
+    }
+
+    /* 3. Optimización de los KPIs */
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 por fila en lugar de 4 */
+        gap: 12px;
+    }
+
+    .kpi-card {
+        padding: 15px;
+        flex-direction: column; /* Icono arriba, número abajo para ahorrar ancho */
+        text-align: center;
+        gap: 8px;
+    }
+
+    .kpi-card h2 {
+        font-size: 1.4rem !important; /* Números un poco más pequeños para que no rompan */
+    }
+
+    .kpi-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    /* 4. Ajustes de la Cabecera */
+    .page-header h1 {
+        font-size: 1.5rem !important;
+    }
+
+    /* 5. Listas y Alertas */
+    .alert-box {
+        flex-direction: column; /* El botón de acción o fecha se va abajo */
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .list-item {
+        font-size: 0.85rem;
+    }
+}
+
+/* Extra para celulares muy pequeños */
+@media (max-width: 480px) {
+    .kpi-grid {
+        grid-template-columns: 1fr; /* 1 por fila en pantallas tipo iPhone SE */
+    }
+}
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebar"></div>
+  <div class="content">
+    <div id="header"></div>
+
+    <div class="page" style="padding: 25px; background: #f8fafc; min-height: calc(100vh - 70px);">
+      
+      <div class="page-header" style="margin-bottom: 25px;">
+        <h1 style="margin: 0; color: #1e293b; font-weight: 800;"><i class="bi bi-speedometer2" style="color: #3b82f6;"></i> Centro de Monitoreo Global</h1>
+        <p style="color: #64748b; margin-top: 5px;">Visión general de todos los clientes, usuarios y estado del sistema.</p>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: #e0f2fe; color: #0284c7;"><i class="bi bi-buildings"></i></div>
+          <div>
+            <p style="margin: 0; color: #64748b; font-size: 0.85rem; font-weight: 600;">Clientes Activos</p>
+            <h2 style="margin: 0; color: #0f172a; font-size: 1.8rem;" id="kpi-tenants">--</h2>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: #f3e8ff; color: #9333ea;"><i class="bi bi-people"></i></div>
+          <div>
+            <p style="margin: 0; color: #64748b; font-size: 0.85rem; font-weight: 600;">Usuarios Globales</p>
+            <h2 style="margin: 0; color: #0f172a; font-size: 1.8rem;" id="kpi-users">--</h2>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: #fee2e2; color: #dc2626;"><i class="bi bi-headset"></i></div>
+          <div>
+            <p style="margin: 0; color: #64748b; font-size: 0.85rem; font-weight: 600;">Tickets Pendientes</p>
+            <h2 style="margin: 0; color: #0f172a; font-size: 1.8rem;" id="kpi-tickets">--</h2>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: #fef9c3; color: #ca8a04;"><i class="bi bi-calendar-x"></i></div>
+          <div>
+            <p style="margin: 0; color: #64748b; font-size: 0.85rem; font-weight: 600;">Vencimientos Próx.</p>
+            <h2 style="margin: 0; color: #0f172a; font-size: 1.8rem;" id="kpi-expiring">--</h2>
+          </div>
+        </div>
+      </div>
+
+      <div class="panels-grid">
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div class="card" style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                <h3 style="margin-top: 0; color: #0f172a; font-size: 1.1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">
+                    <i class="bi bi-bell-fill" style="color: #ef4444;"></i> Alertas del Sistema
+                </h3>
+                <div id="alerts-container">
+                    <p style="text-align: center; color: #94a3b8; font-size: 0.9rem; padding: 10px;">Cargando alertas...</p>
+                </div>
+            </div>
+
+            <div class="card" style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                <h3 style="margin-top: 0; color: #0f172a; font-size: 1.1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">
+                    <i class="bi bi-graph-up-arrow" style="color: #10b981;"></i> Top Clientes (Mayor uso/usuarios)
+                </h3>
+                <div id="top-tenants-container">
+                    <p style="text-align: center; color: #94a3b8; font-size: 0.9rem;">Cargando métricas...</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div class="card" style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                <h3 style="margin-top: 0; color: #0f172a; font-size: 1.1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">
+                    <i class="bi bi-wallet2" style="color: #f59e0b;"></i> Próximos a Vencer (30 días)
+                </h3>
+                <div id="expiring-container">
+                    <p style="text-align: center; color: #94a3b8; font-size: 0.9rem;">Cargando licencias...</p>
+                </div>
+            </div>
+
+            <div class="card" style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                <h3 style="margin-top: 0; color: #0f172a; font-size: 1.1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">
+                    <i class="bi bi-award-fill" style="color: #3b82f6;"></i> Clientes Más Antiguos
+                </h3>
+                <div id="loyal-container">
+                    <p style="text-align: center; color: #94a3b8; font-size: 0.9rem;">Cargando historial...</p>
+                </div>
+            </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/superadmin_dashboard.js"></script>
+
+</body>
+</html>

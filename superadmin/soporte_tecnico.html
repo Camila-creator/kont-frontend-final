@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soporte Técnico | Super Admin</title>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+    /* 1. TABLA BASE */
+    .ticket-table th { background: #f8fafc; color: #475569; font-size: 0.85rem; text-transform: uppercase; padding: 15px; border-bottom: 2px solid #e2e8f0; }
+    .ticket-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; color: #1e293b; vertical-align: middle; }
+    .ticket-table tr:hover td { background: #f8fafc; cursor: pointer; }
+    
+    /* 2. BADGES */
+    .badge { padding: 5px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; display: inline-block; text-transform: uppercase; }
+    .status-pendiente { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+    .status-proceso { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+    .status-resuelto { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+
+    .prio-alta { color: #ef4444; font-weight: 800; }
+    .prio-media { color: #f59e0b; font-weight: 800; }
+    .prio-baja { color: #10b981; font-weight: 800; }
+
+    /* 3. MODAL RE-DISEÑADO (Más amplio y elegante) */
+    .modal {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(8px);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+    }
+
+    .modal-content {
+        background: #ffffff !important;
+        width: 100%;
+        max-width: 700px; /* Un poco más ancho para que respire */
+        border-radius: 24px; /* Bordes más suaves */
+        padding: 30px !important; /* MÁS ESPACIO interno */
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        position: relative;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Títulos con contraste real */
+    #ticket-modal h2 { color: #0f172a !important; font-weight: 800 !important; }
+    #ticket-modal strong { color: #475569 !important; font-size: 0.9rem; }
+    #ticket-modal span { color: #1e293b !important; font-weight: 600; }
+
+    /* Caja de mensaje más espaciosa */
+    .message-box { 
+        background: #f8fafc; 
+        padding: 20px; 
+        border-radius: 12px; 
+        font-size: 1rem; 
+        color: #334155 !important; 
+        margin-top: 15px; 
+        border: 1px solid #e2e8f0;
+        line-height: 1.6;
+        min-height: 100px;
+    }
+
+    /* 4. OPTIMIZACIÓN MOBILE ACTUALIZADA */
+    @media (max-width: 850px) {
+        .ticket-table th:nth-child(3), .ticket-table td:nth-child(3),
+        .ticket-table th:nth-child(5), .ticket-table td:nth-child(5),
+        .ticket-table th:nth-child(7), .ticket-table td:nth-child(7) {
+            display: none;
+        }
+
+        .ticket-table td, .ticket-table th { padding: 10px 6px !important; font-size: 0.8rem !important; }
+
+        .modal-content {
+            padding: 20px !important;
+            border-radius: 16px;
+        }
+
+        /* En móvil, las filas de info se separan para que no se vea apretado */
+        #ticket-modal div[style*="display: grid"] {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+        }
+
+        /* Botones grandes y fáciles de tocar */
+        #ticket-modal div[style*="display: flex"] {
+            flex-direction: column !important;
+            gap: 12px !important;
+        }
+        
+        #ticket-modal button {
+            width: 100% !important;
+            padding: 14px !important;
+            font-size: 0.9rem !important;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebar"></div>
+  <div class="content">
+    <div id="header"></div>
+
+    <div class="page" style="padding: 25px; background: #f8fafc; min-height: calc(100vh - 70px);">
+      <div class="page-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="margin: 0; color: #1e293b; font-weight: 800;"><i class="bi bi-headset" style="color: #3b82f6;"></i> Centro de Soporte (Tickets)</h1>
+            <p style="color: #64748b; margin-top: 5px;">Bandeja de entrada global. Gestiona las fallas, dudas o sugerencias de tus clientes.</p>
+        </div>
+        
+        <div style="display: flex; gap: 10px;">
+            <select id="filter-status" style="padding: 8px 15px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; cursor: pointer;">
+                <option value="ALL">Todos los tickets</option>
+                <option value="PENDIENTE">Pendientes 🔴</option>
+                <option value="RESUELTO">Resueltos 🟢</option>
+            </select>
+        </div>
+      </div>
+
+      <div class="card" style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); overflow-x: auto; border: 1px solid #e2e8f0;">
+        <table class="ticket-table" id="ticket-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr>
+              <th style="width: 80px;">Ticket</th>
+              <th>Empresa (Tenant)</th>
+              <th>Reportado por</th>
+              <th>Asunto</th>
+              <th style="text-align: center;">Prioridad</th>
+              <th style="text-align: center;">Estado</th>
+              <th style="text-align: right;">Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="7" style="text-align: center; padding: 20px;"><i class="bi bi-arrow-repeat spin"></i> Cargando tickets...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="ticket-modal" style="z-index: 1000;">
+  <div class="modal-content" style="max-width: 600px; border-radius: 16px;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 15px;">
+        <h2 style="margin: 0; font-size: 1.2rem; color: #0f172a;" id="modal-ticket-title">Ticket #000 - Asunto</h2>
+        <button id="btn-close-ticket" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; font-size: 0.9rem;">
+        <div><strong>Empresa:</strong> <span id="modal-tenant" style="color: #3b82f6;">-</span></div>
+        <div><strong>Usuario:</strong> <span id="modal-user">-</span></div>
+        <div><strong>Prioridad:</strong> <span id="modal-priority">-</span></div>
+        <div><strong>Fecha:</strong> <span id="modal-date">-</span></div>
+    </div>
+
+    <div>
+        <strong style="color: #475569; font-size: 0.9rem;">Mensaje del cliente:</strong>
+        <div class="message-box" id="modal-message">
+            Cargando mensaje...
+        </div>
+    </div>
+
+    <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+        <label style="font-weight: 600; font-size: 0.9rem; color: #1e293b;">Cambiar estado del ticket:</label>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="btn-secondary" id="btn-mark-process" style="flex: 1; border-radius: 8px;">Marcar en Proceso</button>
+            <button class="btn-super" id="btn-mark-resolved" style="flex: 1; border-radius: 8px; background: #16a34a; border: none; color: white;"><i class="bi bi-check2-circle"></i> Marcar como Resuelto</button>
+        </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/soporte_tecnico.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buyer Persona | Kont Admin </title>
+    
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* === RESET BÁSICO === */
+        * { box-sizing: border-box; }
+
+        .buyer-layout { 
+    display: grid; 
+    grid-template-columns: 320px 1fr; 
+    gap: 25px; 
+    padding: 25px; 
+    align-items: start; /* MUY IMPORTANTE PARA EL SIDEBAR */
+    /* ELIMINAMOS la línea de "height: calc(100vh - 70px);" */
+}
+        /* === SIDEBAR (PERFILES) === */
+        .persona-sidebar { 
+            background: #ffffff; 
+            border: 1px solid #e5e7eb; 
+            border-radius: 12px; 
+            display: flex; flex-direction: column; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            overflow: hidden;
+        }
+        .sidebar-header {
+            padding: 20px; border-bottom: 1px solid #e5e7eb; 
+            display: flex; justify-content: space-between; align-items: center;
+            background: #fdfdfd;
+        }
+        .persona-list-scroll { overflow-y: auto; flex: 1; }
+        .persona-item { 
+            padding: 18px 20px; border-bottom: 1px solid #f3f4f6; 
+            cursor: pointer; transition: all 0.2s ease; 
+            display: flex; align-items: center; gap: 15px; 
+        }
+        .persona-item:hover { background: #f8fafc; }
+        .persona-item.active { background: #eff6ff; border-left: 4px solid #0d6efd; }
+
+        /* === MAIN CONTENT === */
+        .persona-main { 
+            overflow-y: auto; 
+            overflow-x: hidden; /* EVITA EL SCROLL HORIZONTAL FEO */
+            padding-right: 10px; 
+        }
+        
+        /* SOLUCIÓN AL SCROLL HORIZONTAL: Grid Inteligente */
+        .comparison-container { 
+            display: grid; 
+            /* Si no caben al menos 450px para cada una, se pone una debajo de otra */
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); 
+            gap: 25px; 
+            margin-top: 20px; 
+        }
+
+        .card-real { background: white; border: 1px solid #e5e7eb; border-top: 5px solid #6b7280; border-radius: 12px; padding: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .card-ideal { background: white; border: 1px solid #e5e7eb; border-top: 5px solid #0d6efd; border-radius: 12px; padding: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        
+        .card-title { font-weight: 800; margin-bottom: 20px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; }
+        .card-title.real { color: #4b5563; }
+        .card-title.ideal { color: #0d6efd; }
+
+        .data-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #e5e7eb; padding: 12px 0; font-size: 0.95rem; }
+        .data-label { font-weight: 600; color: #374151; }
+        
+        /* Contenedor estricto para los gráficos para que no empujen el ancho */
+        .chart-mini { height: 220px; width: 100%; position: relative; margin-top: 15px; }
+
+        /* === BOTONES === */
+        .btn-primary, .btn-action { background: #0d6efd; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: 0.2s; }
+        .btn-primary:hover, .btn-action:hover { background: #0b5ed7; }
+        .btn-outline { background: transparent; border: 1px solid #d1d5db; color: #4b5563; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .btn-outline:hover { background: #f3f4f6; }
+        .btn-sm { padding: 4px 12px; font-size: 1.1rem; border-radius: 5px; }
+
+        /* =========================================
+           SOLUCIÓN DEFINITIVA AL DESBORDE DEL MODAL
+           ========================================= */
+        .modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(3px);
+            display: flex; justify-content: center; align-items: center; 
+            z-index: 9999; opacity: 0; visibility: hidden; transition: all 0.3s ease; 
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        
+        .modal-box { 
+            background: #ffffff; width: 95%; max-width: 1100px;
+            max-height: 90vh; /* Máximo 90% de la pantalla */
+            border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); 
+            display: flex; flex-direction: column; 
+            transform: translateY(-20px); transition: all 0.3s ease;
+            overflow: hidden; /* CORTA EL DESBORDE AQUÍ */
+        }
+        .modal-overlay.active .modal-box { transform: translateY(0); }
+
+        .modal-header { 
+            padding: 20px 30px; border-bottom: 1px solid #e5e7eb; 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: #f8fafc; flex-shrink: 0;
+        }
+        .modal-header h3 { margin: 0; font-size: 1.25rem; color: #1f2937; }
+        .modal-close { background: none; border: none; font-size: 1.8rem; cursor: pointer; color: #9ca3af; transition: 0.2s; }
+        .modal-close:hover { color: #ef4444; }
+
+        #personaForm {
+            display: flex; flex-direction: column;
+            height: 100%; 
+            min-height: 0; /* EVITA QUE EL FORM CREZCA INFINITO */
+        }
+
+        .modal-body { 
+            padding: 30px; 
+            overflow-y: auto; /* SCROLL ACTIVO */
+            flex: 1; 
+            min-height: 0; /* OBLIGATORIO PARA FLEXBOX SCROLL */
+        }
+
+        .modal-footer { 
+            padding: 20px 30px; border-top: 1px solid #e5e7eb; 
+            display: flex; justify-content: flex-end; gap: 12px; 
+            background: #f8fafc; flex-shrink: 0;
+        }
+
+        /* Formulario Layout Interno */
+        .form-section-top { margin-bottom: 30px; }
+        
+        /* Grid responsivo para el modal */
+        .modal-cols { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+            gap: 30px; 
+        }
+        
+        .modal-col-real, .modal-col-ideal { padding: 25px; border-radius: 10px; }
+        .modal-col-real { background: #f8f9fa; border: 1px solid #e9ecef; }
+        .modal-col-ideal { background: #f0f7ff; border: 1px solid #cce5ff; }
+
+        .col-header { margin: 0 0 20px 0; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; padding-bottom: 10px; }
+        .col-header.real { color: #495057; border-bottom: 2px solid #dee2e6; }
+        .col-header.ideal { color: #0d6efd; border-bottom: 2px solid #b6d4fe; }
+
+        /* Inputs */
+        .form-group { margin-bottom: 18px; }
+        label { font-size: 0.75rem; font-weight: 700; color: #6b7280; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, textarea { width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; font-family: inherit; transition: border 0.2s; background: white; }
+        input:focus, textarea:focus { border-color: #0d6efd; outline: none; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15); }
+        
+        .grid-2-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        hr { border: none; border-top: 1px dashed #ced4da; margin: 25px 0; }
+
+        @media (max-width: 900px) {
+    .buyer-layout {
+        grid-template-columns: 1fr; /* Sidebar arriba, detalle abajo */
+        padding: 15px;
+        gap: 20px;
+    }
+
+    .persona-sidebar {
+        max-height: 300px; /* Para que no ocupe toda la pantalla inicial */
+    }
+
+    .comparison-container {
+        grid-template-columns: 1fr !important; /* Forzamos una sola columna de cards */
+    }
+
+    .modal-cols {
+        grid-template-columns: 1fr !important;
+    }
+
+    .modal-box {
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .grid-2-inputs {
+        grid-template-columns: 1fr; /* Inputs uno bajo otro en móvil */
+    }
+}
+    </style>
+</head>
+<body>
+
+<div class="layout">
+    <div id="sidebar"></div>
+    <div class="content">
+        <div id="header"></div>
+
+        <div class="buyer-layout">
+            
+            <div class="persona-sidebar">
+                <div class="sidebar-header">
+                    <h4 style="margin:0; font-size: 1.1rem; color: #1f2937;"><i class="bi bi-people-fill text-primary me-2"></i> Perfiles</h4>
+                    <button class="btn-primary btn-sm" onclick="openModal()" title="Crear Nuevo Perfil">+</button>
+                </div>
+                <div id="persona-list" class="persona-list-scroll"></div>
+            </div>
+
+            <div class="persona-main" id="persona-detail">
+                <div style="text-align:center; padding:15vh 20px; color:#9ca3af;">
+                    <i class="bi bi-person-bounding-box" style="font-size: 4rem; opacity: 0.5; display: block; margin-bottom: 15px;"></i>
+                    <h3 style="font-weight: 500;">Selecciona un perfil</h3>
+                    <p>Haz clic en un Buyer Persona de la lista para ver su estrategia o crea uno nuevo.</p>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="personaModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3><i class="bi bi-person-gear text-primary me-2"></i> Gestionar Estrategia</h3>
+            <button class="modal-close" onclick="closeModal()" type="button">&times;</button>
+        </div>
+        
+        <form id="personaForm" onsubmit="savePersona(event)">
+            <input type="hidden" name="id">
+            
+            <div class="modal-body">
+                <div class="form-section-top">
+                    <div class="form-group">
+                        <label>Nombre del Perfil</label>
+                        <input type="text" name="nombre" required placeholder="Ej: El Productor Tradicional">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Descripción / Resumen</label>
+                        <textarea name="descripcion" rows="2" placeholder="Describe brevemente a este cliente (Ej: Valora el crédito y compra volumen...)"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-cols">
+                    <div class="modal-col-real">
+                        <h4 class="col-header real"><i class="bi bi-building"></i> DATOS REALES (Hoy)</h4>
+                        
+                        <div class="grid-2-inputs form-group">
+                            <div><label>Edad (Promedio)</label><input type="text" name="r_edad" placeholder="Ej: 50-65"></div>
+                            <div><label>Género Predominante</label><input type="text" name="r_genero" placeholder="Ej: Masculino"></div>
+                        </div>
+                        
+                        <div class="form-group"><label>Ubicación(es) Actual(es)</label><input type="text" name="r_ubicacion" placeholder="Ej: Valencia, Los Llanos"></div>
+                        <div class="form-group"><label>Intereses Detectados</label><textarea name="r_intereses" rows="2" placeholder="Ej: Ganadería, Precios, Lluvias..."></textarea></div>
+
+                        <hr>
+                        
+                        <div class="grid-2-inputs form-group">
+                            <div><label>Pago Contado (%)</label><input type="number" name="r_contado" placeholder="0 - 100"></div>
+                            <div><label>Pago Crédito (%)</label><input type="number" name="r_credito" placeholder="0 - 100"></div>
+                        </div>
+
+                        <div class="grid-2-inputs form-group" style="margin-bottom:0;">
+                            <div><label>Cliente Mayorista (%)</label><input type="number" name="r_mayorista" placeholder="0 - 100"></div>
+                            <div><label>Cliente Detal (%)</label><input type="number" name="r_detal" placeholder="0 - 100"></div>
+                        </div>
+                    </div>
+
+                    <div class="modal-col-ideal">
+                        <h4 class="col-header ideal"><i class="bi bi-rocket-takeoff"></i> DATOS IDEALES (Meta)</h4>
+                        
+                        <div class="grid-2-inputs form-group">
+                            <div><label>Edad Target</label><input type="text" name="i_edad" placeholder="Ej: 35-50"></div>
+                            <div><label>Género Target</label><input type="text" name="i_genero" placeholder="Ej: Mixto"></div>
+                        </div>
+                        
+                        <div class="form-group"><label>Ubicación Objetivo</label><input type="text" name="i_ubicacion" placeholder="Ej: Expansión Nacional"></div>
+                        <div class="form-group"><label>Intereses Objetivo</label><textarea name="i_intereses" rows="2" placeholder="Ej: Tecnología agrícola, Innovación..."></textarea></div>
+
+                        <hr style="border-top-color: #b6d4fe;">
+                        
+                        <div class="grid-2-inputs form-group">
+                            <div><label style="color: #0d6efd;">Meta Contado (%)</label><input type="number" name="i_contado" placeholder="0 - 100"></div>
+                            <div><label style="color: #0d6efd;">Meta Crédito (%)</label><input type="number" name="i_credito" placeholder="0 - 100"></div>
+                        </div>
+
+                        <div class="grid-2-inputs form-group" style="margin-bottom:0;">
+                            <div><label style="color: #0d6efd;">Meta Mayorista (%)</label><input type="number" name="i_mayorista" placeholder="0 - 100"></div>
+                            <div><label style="color: #0d6efd;">Meta Detal (%)</label><input type="number" name="i_detal" placeholder="0 - 100"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-outline" onclick="closeModal()">Cancelar</button>
+                <button type="submit" class="btn-action"><i class="bi bi-save me-2"></i> Guardar Estrategia</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/buyer_persona.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuarios Globales | Super Admin</title>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    /* 1. GRID DE TARJETAS (Escritorio y General) */
+    .tenants-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .tenant-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .tenant-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        border-color: #cbd5e1;
+    }
+
+    .tenant-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 4px;
+        background: linear-gradient(90deg, #0ea5e9, #3b82f6);
+    }
+
+    .tenant-card.suspended::before {
+        background: linear-gradient(90deg, #ef4444, #b91c1c);
+    }
+
+    .stat-box {
+        text-align: center;
+        background: #f8fafc;
+        padding: 15px 10px;
+        border-radius: 12px;
+        flex: 1;
+    }
+
+    .stat-number {
+        display: block;
+        font-size: 1.8rem;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+
+    /* 2. MODAL BASE */
+    .modal {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(6px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        transition: all 0.3s ease;
+    }
+
+    .modal.hidden { display: none; }
+
+    .modal-content {
+        background: #ffffff !important;
+        width: 90%;
+        max-width: 800px;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    /* 3. TABLA ESPÍA (Contraste y Legibilidad) */
+    .table-responsive {
+        width: 100%;
+        overflow-x: hidden; /* Evitamos el scroll forzando ajuste */
+    }
+
+    .spy-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: auto; /* Permite que las celdas se ajusten al contenido */
+    }
+
+    .spy-table thead tr {
+        background: #f1f5f9;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .spy-table th {
+        color: #475569 !important;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        padding: 12px 15px;
+        font-weight: 700;
+    }
+
+    .spy-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.9rem;
+        color: #1e293b !important; /* TEXTO OSCURO PARA CONTRASTE */
+        vertical-align: middle;
+    }
+
+    .spy-table tr:hover td { background: #f8fafc; }
+
+    .role-badge {
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    /* 4. AJUSTES ESPECÍFICOS PARA MOBILE (NO SCROLL) */
+    @media (max-width: 600px) {
+        .modal-content {
+            width: 98% !important;
+            margin: 5px !important;
+        }
+
+        .tenants-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        /* Reducimos fuentes y paddings drásticamente */
+        .spy-table th, .spy-table td {
+            padding: 8px 4px !important; /* Espacio mínimo */
+            font-size: 0.7rem !important;
+        }
+
+        /* Forzamos que el email rompa en palabras para que no estire la tabla */
+        .spy-table td:nth-child(2) {
+            max-width: 100px;
+            word-break: break-all; 
+            line-height: 1.1;
+            color: #64748b !important;
+        }
+
+        /* Badges más pequeños */
+        .role-badge {
+            font-size: 0.65rem;
+            padding: 2px 4px;
+        }
+
+        /* Ajuste de estado para que quepa en una celda mini */
+        .spy-table td:last-child {
+            font-size: 0.65rem !important;
+            min-width: 70px;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebar"></div>
+  <div class="content">
+    <div id="header"></div>
+
+    <div class="page" style="padding: 25px; background: #f8fafc; min-height: calc(100vh - 70px);">
+
+      <div class="page-header" style="margin-bottom: 10px;">
+        <h1 style="margin: 0; color: #1e293b; font-weight: 800;"><i class="bi bi-radar" style="color: #9333ea;"></i> Monitoreo de Usuarios</h1>
+        <p style="color: #64748b; margin-top: 5px;">Rastrea los asientos (seats) de tus clientes, analiza su crecimiento y gestiona el uso del sistema.</p>
+      </div>
+
+      <div id="tenants-cards-container" class="tenants-grid">
+        </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="spy-modal" style="z-index: 1000;">
+  <div class="modal-content" style="max-width: 800px; border-radius: 16px; padding: 0; overflow: hidden;">
+    
+    <div style="background: linear-gradient(to right, #0f172a, #1e293b); padding: 20px 25px; display: flex; justify-content: space-between; align-items: center;">
+        <h2 id="spy-modal-title" style="margin: 0; color: white; font-weight: 700; font-size: 1.3rem;">
+            Usuarios de <span style="color: #38bdf8;">Empresa</span>
+        </h2>
+        <button id="btn-close-spy" style="background: rgba(255,255,255,0.1); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s;">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+<div style="padding: 20px; max-height: 60vh; overflow-y: auto;">
+    <div class="table-responsive"> <table id="spy-users-table" class="spy-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th style="text-align: center;">Rol</th>
+                    <th style="text-align: center;">Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+</div>
+
+    <div style="padding: 15px 25px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
+        <p style="margin: 0; font-size: 0.8rem; color: #64748b;"><i class="bi bi-shield-lock"></i> Vista exclusiva de Súper Administrador</p>
+    </div>
+
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/superadmin_usuarios_gobales.js"></script>
+
+</body>
+</html>

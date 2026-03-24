@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Resultados | Kont Admin</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+        
+        .results-layout { padding: 25px; min-height: calc(100vh - 70px); background: #f8fafc; width: 100%; overflow-x: hidden; }
+        
+        .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        
+        /* TARJETAS FINANCIERAS (EL PULSO) */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; width: 100%; }
+        .kpi-card { background: white; padding: 25px 20px; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 15px; transition: 0.3s;}
+        .kpi-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px rgba(0,0,0,0.05); }
+        .kpi-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; flex-shrink: 0;}
+        .kpi-info { flex-grow: 1; }
+        .kpi-label { font-size: 0.8rem; color: #6b7280; text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
+        .kpi-value { font-size: 1.8rem; font-weight: 900; color: #1f2937; margin: 0; line-height: 1;}
+        .kpi-sub { font-size: 0.8rem; margin-top: 8px; font-weight: 600; display: flex; align-items: center; gap: 4px;}
+
+        /* Colores de KPI */
+        .icon-sales { background: #dcfce7; color: #16a34a; }
+        .icon-spend { background: #fee2e2; color: #ef4444; }
+        .icon-roi { background: #e0e7ff; color: #4f46e5; }
+        .icon-social { background: #fce7f3; color: #db2777; }
+
+        /* SECCIÓN DE GRÁFICAS (CORRECCIÓN ANTI-DESBORDAMIENTO) */
+        .charts-grid { display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 30px; width: 100%; }
+        
+        .chart-card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 16px; 
+            border: 1px solid #e5e7eb; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02); 
+            min-width: 0; /* LA MAGIA: Obliga a la tarjeta a no desbordarse */
+            width: 100%; 
+            overflow: hidden; /* Corta cualquier cosa rebelde */
+        }
+        
+        .chart-header { font-size: 1.1rem; font-weight: 800; color: #374151; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;}
+        
+        /* Contenedores fijos para que Chart.js sepa exactamente qué tamaño tener */
+        .chart-container { position: relative; height: 320px; width: 100%; }
+        .chart-container-sm { position: relative; height: 220px; width: 100%; }
+
+        /* SALÓN DE LA FAMA (TOP PERFORMERS) */
+        .fame-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; width: 100%; }
+        .fame-card { background: linear-gradient(135deg, #1e293b, #0f172a); color: white; padding: 20px; border-radius: 16px; position: relative; overflow: hidden; box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        .fame-card::after { content: '🏆'; position: absolute; right: -10px; bottom: -20px; font-size: 6rem; opacity: 0.1; }
+        .fame-title { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; margin-bottom: 10px; letter-spacing: 1px;}
+        .fame-winner { font-size: 1.2rem; font-weight: 800; color: #f8fafc; margin-bottom: 5px; line-height: 1.3;}
+        .fame-metric { font-size: 0.9rem; font-weight: 600; color: #38bdf8; }
+
+        /* Filtros */
+        .btn-outline { background: white; border: 1px solid #d1d5db; color: #4b5563; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; outline: none;}
+        .btn-outline:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+    </style>
+</head>
+<body>
+
+<div class="layout">
+    <div id="sidebar"></div>
+    <div class="content">
+        <div id="header"></div>
+
+        <div class="results-layout">
+            
+            <div class="header-section">
+                <div>
+                    <h2 style="margin:0;"><i class="bi bi-graph-up-arrow text-primary" style="color:#4f46e5 !important;"></i> Desempeño y ROI</h2>
+                    <p style="color:#6b7280; margin:5px 0 0 0;">Análisis financiero y retorno de inversión en Marketing</p>
+                </div>
+                <div>
+                    <select id="timeFilter" class="btn-outline" onchange="updateDashboard()">
+                        <option value="mes">Este Mes</option>
+                        <option value="trimestre" selected>Último Trimestre</option>
+                        <option value="ano">Este Año</option>
+                        <option value="historico">Histórico Total</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-sales"><i class="bi bi-cash-stack"></i></div>
+                    <div class="kpi-info">
+                        <div class="kpi-label">Ingresos / Ventas</div>
+                        <div class="kpi-value" id="val-ingresos">$ 0</div>
+                        <div class="kpi-sub" style="color:#16a34a;"><i class="bi bi-arrow-up-right"></i> Generado en el periodo</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-spend"><i class="bi bi-credit-card"></i></div>
+                    <div class="kpi-info">
+                        <div class="kpi-label">Inversión MKT Total</div>
+                        <div class="kpi-value" id="val-gastos">$ 0</div>
+                        <div class="kpi-sub" style="color:#ef4444;"><i class="bi bi-bar-chart-fill"></i> Ads + Offline + PR</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-roi"><i class="bi bi-rocket-takeoff-fill"></i></div>
+                    <div class="kpi-info">
+                        <div class="kpi-label">ROI (Retorno de Inversión)</div>
+                        <div class="kpi-value" id="val-roi">0%</div>
+                        <div class="kpi-sub" id="val-roi-sub" style="color:#4f46e5;">Rentabilidad de campaña</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-icon icon-social"><i class="bi bi-people-fill"></i></div>
+                    <div class="kpi-info">
+                        <div class="kpi-label">Nuevos Seguidores</div>
+                        <div class="kpi-value" id="val-seguidores">0</div>
+                        <div class="kpi-sub" style="color:#db2777;"><i class="bi bi-instagram"></i> Crecimiento global</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="charts-grid">
+                
+                <div class="chart-card">
+                    <div class="chart-header">
+                        Ingresos vs. Inversión MKT
+                        <i class="bi bi-bar-chart-line" style="color:#9ca3af; font-size:1.3rem;"></i>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chartFinanzas"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        Distribución del Presupuesto
+                        <i class="bi bi-wallet2" style="color:#9ca3af; font-size:1.3rem;"></i>
+                    </div>
+                    <div class="chart-container-sm">
+                        <canvas id="chartDistribucion"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <h3 style="margin-bottom: 20px; color:#1f2937;"><i class="bi bi-trophy-fill" style="color:#eab308;"></i> Salón de la Fama (Top Performers)</h3>
+            <div class="fame-grid">
+                
+                <div class="fame-card">
+                    <div class="fame-title">Mejor Creador / Influencer</div>
+                    <div class="fame-winner" id="fame-influencer">Cargando...</div>
+                    <div class="fame-metric" id="fame-influencer-metric">...</div>
+                </div>
+
+                <div class="fame-card">
+                    <div class="fame-title">Campaña Más Rentable (Ads)</div>
+                    <div class="fame-winner" id="fame-campana">Cargando...</div>
+                    <div class="fame-metric" id="fame-campana-metric">...</div>
+                </div>
+
+                <div class="fame-card">
+                    <div class="fame-title">Publicación Estrella (Orgánico)</div>
+                    <div class="fame-winner" id="fame-post">Cargando...</div>
+                    <div class="fame-metric" id="fame-post-metric">...</div>
+                </div>
+
+                <div class="fame-card" style="background: linear-gradient(135deg, #0f766e, #042f2e);">
+                    <div class="fame-title">Buyer Persona Dominante</div>
+                    <div class="fame-winner" id="fame-persona">Cargando...</div>
+                    <div class="fame-metric" id="fame-persona-metric">...</div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/mkt_results.js"></script>
+</body>
+</html>

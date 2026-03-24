@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bancos & Cuentas | Kont Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    /* ESTILOS PREMIUM PARA TESORERÍA */
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;}
+    .section-header h2 { font-size: 1.1rem; font-weight: 800; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 8px;}
+    
+    /* Tablas Compactas */
+    .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);}
+    .table-mini { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;}
+    .table-mini th { background: #f8fafc; color: #64748b; font-size: 0.75rem; text-transform: uppercase; padding: 12px 15px; border-bottom: 1px solid #e2e8f0;}
+    .table-mini td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-weight: 500;}
+
+    /* Badges */
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; text-transform: uppercase;}
+    .badge-active { background: #dcfce7; color: #16a34a; }
+    .badge-inactive { background: #fee2e2; color: #dc2626; }
+    .badge-kind { background: #e0f2fe; color: #0284c7; }
+
+    /* Routing Selects */
+    .routing-select { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; outline: none; width: 100%; background: #f8fafc;}
+    .routing-select:focus { border-color: #10b981; background: white;}
+
+    /* Modal Form Grids */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+    .full-width { grid-column: span 2; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px;}
+    .form-group label { font-weight: 600; color: #475569; font-size: 0.8rem; }
+    .form-group input, .form-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; outline: none;}
+    
+    .btn-icon { padding: 5px 8px; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; color: white;}
+    .btn-edit { background: #3b82f6; }
+    .btn-del { background: #ef4444; }
+
+    /* RESPONSIVE DESIGN: MOBILE OPTIMIZATION */
+@media (max-width: 768px) {
+    .page { padding: 10px !important; }
+
+    .table-container { 
+        background: transparent; 
+        border: none; 
+        box-shadow: none; 
+    }
+
+    .table-mini thead { display: none; }
+    .table-mini, .table-mini tbody, .table-mini tr, .table-mini td { display: block; width: 100%; }
+
+    /* La "Fila" ahora es un rectángulo delgado */
+    .table-mini tr {
+        background: white;
+        margin-bottom: 8px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        padding: 10px 12px;
+        display: grid;
+        grid-template-columns: 1fr auto; /* Info a la izquierda, acciones a la derecha */
+        align-items: center;
+        gap: 5px;
+    }
+
+    .table-mini td {
+        display: block;
+        padding: 2px 0 !important;
+        border: none !important;
+    }
+
+    /* Ocultamos IDs y labels innecesarios para máxima limpieza */
+    .table-mini td[data-label="ID"],
+    .table-mini td::before { display: none; }
+
+    /* Nombre del Banco/Cuenta resaltado */
+    .table-mini td[data-label="Banco"],
+    .table-mini td[data-label="Nombre"] {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    /* Info secundaria (Moneda, Tipo, País) en una línea pequeña */
+    .table-mini td[data-label="Tipo"],
+    .table-mini td[data-label="País"],
+    .table-mini td[data-label="Moneda"],
+    .table-mini td[data-label="Estatus"] {
+        display: inline-block;
+        width: auto;
+        margin-right: 8px;
+        font-size: 0.75rem;
+    }
+
+    /* Contenedor de botones a la derecha */
+    .table-mini td:last-child {
+        grid-column: 2;
+        grid-row: 1 / 3; /* Abarca el alto de la fila */
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        margin: 0;
+        border: none !important;
+    }
+
+    .btn-icon {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+
+    /* Ajuste especial para el Routing (Selects) */
+    @media (max-width: 768px) {
+    .routing-row {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center;
+    }
+    .rt-method, .rt-select-container, .rt-currency, .rt-action {
+        width: 100% !important;
+        text-align: center !important;
+        display: flex;
+        justify-content: center;
+    }
+}
+
+    .btn-save-routing {
+        background: #000ead; /* Color neutro para que no llame tanto la atención */
+        color: #ffffff;
+        border: 1px solid #e2e8f0;
+        padding: 8px 25px;
+        border-radius: 20px; /* Estilo píldora, más discreto */
+        font-size: 0.85rem;
+        font-weight: 600;
+        width: auto; /* Que no ocupe todo el ancho */
+        transition: all 0.3s ease;
+    }
+
+    .btn-save-routing.success {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+}
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebar"></div>
+  <div class="content">
+    <div id="header"></div>
+
+    <div class="page" style="padding: 25px; background: #f8fafc; min-height: calc(100vh - 70px);">
+      
+      <div class="page-header" style="margin-bottom: 25px;">
+        <h1 style="margin: 0; color: #1e293b; font-weight: 800;">🏦 Tesorería: Bancos & Cuentas</h1>
+        <p style="color: #64748b; margin-top: 5px;">Configura tus entidades financieras y las rutas automáticas de cobro.</p>
+      </div>
+
+      <div class="section-header">
+        <h2><i class="bi bi-bank" style="color:#0284c7;"></i> Entidades Bancarias</h2>
+        <button id="btn-new-bank" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem; border-radius: 8px;">
+          <i class="bi bi-plus-lg"></i> Nuevo Banco
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table class="table-mini" id="banks-table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">ID</th>
+              <th>Nombre de la Institución</th>
+              <th style="text-align: center;">País</th>
+              <th style="text-align: center;">Estatus</th>
+              <th style="text-align: center; width: 120px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="section-header">
+        <h2><i class="bi bi-wallet2" style="color:#10b981;"></i> Mis Cuentas & Cajas</h2>
+        <button id="btn-new-account" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem; border-radius: 8px; background:#10b981; border:none;">
+          <i class="bi bi-plus-lg"></i> Nueva Cuenta
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table class="table-mini" id="accounts-table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">ID</th>
+              <th>Tipo</th>
+              <th>Nombre de Cuenta / Alias</th>
+              <th style="text-align: center;">Moneda</th>
+              <th>Banco Asociado</th>
+              <th style="text-align: center;">Estatus</th>
+              <th style="text-align: center; width: 120px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="section-header">
+        <h2><i class="bi bi-diagram-3" style="color:#8b5cf6;"></i> Enrutamiento de Pagos (Routing)</h2>
+        <button id="btn-refresh" class="btn-secondary" style="padding: 8px 16px; font-size: 0.85rem;">
+          <i class="bi bi-arrow-clockwise"></i> Recargar
+        </button>
+      </div>
+
+      <div class="table-container" style="border-top: 3px solid #8b5cf6;">
+        <div style="padding: 15px; background: #f8fafc; font-size: 0.8rem; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+          <i class="bi bi-info-circle-fill"></i> Selecciona la cuenta donde se recibirá el dinero por defecto según el método elegido por el cliente.
+        </div>
+        <table class="table-mini" id="routing-table">
+          <thead>
+            <tr>
+              <th style="width: 200px;">Método de Pago</th>
+              <th>Cuenta Receptora por Defecto</th>
+              <th style="text-align: center;">Moneda</th>
+              <th>Banco</th>
+              <th style="text-align: center; width: 100px;">Acción</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="bank-modal">
+  <div class="modal-content" style="max-width: 400px; border-radius: 16px;">
+    <h2 id="bank-modal-title" style="margin-top: 0; color: #1e293b; font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">Nuevo Banco</h2>
+    <form id="bank-form" style="margin-top: 15px;">
+      <input type="hidden" id="bank-id">
+      <div class="form-group">
+        <label>Nombre del Banco *</label>
+        <input type="text" id="bank-name" placeholder="Ej: Banesco, JP Morgan..." required>
+      </div>
+      <div class="form-group">
+        <label>Código de País (ISO)</label>
+        <input type="text" id="bank-country" placeholder="Ej: VE, US, ES">
+      </div>
+      <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px;">
+        <input type="checkbox" id="bank-active" checked style="width: 18px; height: 18px;">
+        <label style="margin:0;">Entidad Activa</label>
+      </div>
+      <div class="modal-actions" style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+        <button type="button" class="btn-secondary" id="bank-cancel">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar Banco</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal hidden" id="account-modal">
+  <div class="modal-content" style="max-width: 600px; border-radius: 16px;">
+    <h2 id="account-modal-title" style="margin-top: 0; color: #1e293b; font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">Nueva Cuenta</h2>
+    <form id="account-form" style="margin-top: 15px;">
+      <input type="hidden" id="account-id">
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Tipo de Cuenta *</label>
+          <select id="account-kind" required>
+            <option value="">Selecciona...</option>
+            <option value="BANCO">Banco (Nacional)</option>
+            <option value="EFECTIVO">Caja / Efectivo</option>
+            <option value="ZELLE">Zelle</option>
+            <option value="CUENTA_EXTRANJERA">Cuenta Internacional</option>
+            <option value="INTERCAMBIO">Intercambio / Activos</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nombre / Alias *</label>
+          <input type="text" id="account-name" placeholder="Ej: Pago Móvil Principal" required>
+        </div>
+        <div class="form-group">
+          <label>Moneda *</label>
+          <input type="text" id="account-currency" placeholder="USD o VES" value="USD" required>
+        </div>
+        <div class="form-group">
+          <label>Banco Asociado</label>
+          <select id="account-bank"><option value="">(Sin banco)</option></select>
+        </div>
+        <div class="form-group">
+          <label>N° de Cuenta / Correo</label>
+          <input type="text" id="account-number" placeholder="Opcional">
+        </div>
+        <div class="form-group">
+          <label>Titular / Beneficiario</label>
+          <input type="text" id="account-holder" placeholder="Nombre completo">
+        </div>
+        <div class="form-group full-width">
+          <label>Notas Internas</label>
+          <input type="text" id="account-notes" placeholder="Ej: Solo para depósitos en efectivo">
+        </div>
+      </div>
+
+      <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; margin-top: 10px;">
+        <input type="checkbox" id="account-active" checked style="width: 18px; height: 18px;">
+        <label style="margin:0;">Cuenta Habilitada</label>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+        <button type="button" class="btn-secondary" id="account-cancel">Cancelar</button>
+        <button type="submit" class="btn-primary" style="background:#10b981; border:none;">Guardar Cuenta</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal hidden" id="alert-modal">
+  <div class="modal-content" style="max-width: 400px; text-align: center;">
+    <h2 id="alert-title" style="margin-top: 0;">Aviso</h2>
+    <p id="alert-message" class="text-soft" style="margin: 10px 0 20px;">Mensaje</p>
+    <div class="modal-actions" style="justify-content: center;">
+      <button type="button" class="btn-primary" id="alert-ok" style="width: 100%;">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/bancos.js"></script>
+</body>
+</html>

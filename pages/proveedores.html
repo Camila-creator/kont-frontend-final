@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proveedores | Kont Admin</title>
+  <link rel="stylesheet" href="../assets/css/main.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    /* ESTILOS PREMIUM PARA PROVEEDORES */
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; background: white; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+    
+    .search-box { display: flex; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 5px 15px; min-width: 300px; flex-grow: 1; max-width: 500px;}
+    .search-box i { color: #94a3b8; margin-right: 10px; }
+    .search-box input { border: none; outline: none; width: 100%; padding: 8px 0; font-size: 0.95rem; background: transparent;}
+
+    /* Formulario en Grid */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+    .full-width { grid-column: span 2; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-weight: 600; color: #475569; font-size: 0.85rem; }
+    .form-group input, .form-group textarea, .form-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; outline: none; transition: border 0.3s; background: white; font-family: inherit;}
+    .form-group input:focus, .form-group textarea:focus { border-color: #10b981; }
+
+    .table-actions { display: flex; gap: 8px; justify-content: center;}
+    .btn-icon { padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; color: white; font-size: 1rem; display: inline-flex; justify-content: center; align-items: center;}
+    .btn-edit { background: #3b82f6; } .btn-edit:hover { background: #2563eb; }
+    .btn-del { background: #ef4444; } .btn-del:hover { background: #dc2626; }
+    
+    /* Badges para condiciones de pago */
+    .badge-terms { background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; border: 1px solid #e2e8f0; }
+
+    @media (max-width: 768px) {
+    /* 1. AJUSTES DE ESPACIADO GENERAL */
+    .page { padding: 10px !important; }
+    .page-header h1 { font-size: 1.3rem !important; text-align: center; }
+    .page-header p { display: none; } /* Ocultamos descripción para ganar espacio */
+
+    /* 2. BARRA DE BÚSQUEDA Y BOTÓN NUEVO */
+    .top-bar { 
+        flex-direction: column; 
+        padding: 12px; 
+        gap: 10px;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    .search-box { 
+        width: 100%; 
+        max-width: none; 
+        min-width: 0;
+        height: 45px;
+        background: white;
+        border: 1px solid #cbd5e1;
+    }
+
+    #btn-new-supplier {
+        width: 100%;
+        height: 48px;
+        justify-content: center;
+        font-size: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); /* Sombra verde sutil */
+    }
+
+    /* 3. TRANSFORMACIÓN DE TABLA A TARJETAS (CARDS) */
+    #suppliers-table thead { display: none; } /* Escondemos cabecera */
+    
+    #suppliers-table, 
+    #suppliers-table tbody, 
+    #suppliers-table tr, 
+    #suppliers-table td {
+        display: block;
+        width: 100%;
+    }
+
+    #suppliers-table tbody tr {
+        background: white;
+        margin-bottom: 15px;
+        padding: 15px;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        position: relative;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    /* ID (#) arriba a la izquierda */
+    #suppliers-table td:nth-child(1) {
+        font-size: 0.75rem;
+        padding: 0;
+        margin-bottom: 5px;
+    }
+
+    /* Nombre de la Empresa (Destacado) */
+    #suppliers-table td:nth-child(3) {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #1e293b;
+        padding: 0;
+        margin-bottom: 8px;
+    }
+
+    /* RIF (Debajo del nombre) */
+    #suppliers-table td:nth-child(2) {
+        font-size: 0.85rem;
+        padding: 0;
+        margin-bottom: 10px;
+        color: #64748b;
+    }
+    #suppliers-table td:nth-child(2)::before { content: "RIF: "; font-weight: 600; }
+
+    /* Contacto y Teléfono en la misma línea */
+    #suppliers-table td:nth-child(4),
+    #suppliers-table td:nth-child(5) {
+        display: inline-block;
+        width: auto;
+        padding: 0;
+        margin-right: 15px;
+        font-size: 0.85rem;
+    }
+
+    /* Condiciones de Pago (Badge arriba a la derecha) */
+    #suppliers-table td:nth-child(6) {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 0;
+        width: auto;
+    }
+
+    /* Acciones al final */
+    #suppliers-table td:last-child {
+        margin-top: 15px;
+        padding-top: 12px;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .table-actions {
+        justify-content: space-around;
+    }
+
+    .btn-icon {
+        width: 45%; /* Botones más grandes para el pulgar */
+        height: 40px;
+    }
+
+    /* 4. MODAL DE PROVEEDOR (FORMULARIO) */
+    .modal-content {
+        width: 95% !important;
+        margin: 10px auto;
+        padding: 20px 15px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr; /* Una sola columna en móvil */
+        gap: 12px;
+    }
+
+    .full-width {
+        grid-column: span 1;
+    }
+
+/* 4. MODAL DE PROVEEDOR (SOLO BOTONES) */
+    .modal-actions {
+        display: flex !important;
+        flex-direction: column-reverse !important; /* Guardar arriba, Cancelar abajo */
+        gap: 12px !important; /* Aquí es donde se separan */
+        margin-top: 20px !important;
+        border-top: 1px solid #e2e8f0 !important;
+        padding-top: 15px !important;
+    }
+
+    .modal-actions button {
+        width: 100% !important;
+        height: 50px !important; /* Un poquito más altos para el toque */
+        font-weight: 700 !important;
+        margin: 0 !important; /* Eliminamos cualquier margen que los pegue */
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        border-radius: 12px !important;
+    }
+}
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebar"></div>
+  <div class="content">
+    <div id="header"></div>
+
+    <div class="page" style="padding: 25px; background: #f8fafc; min-height: calc(100vh - 70px);">
+
+      <div class="page-header" style="margin-bottom: 20px;">
+        <h1 style="margin: 0; color: #1e293b; font-weight: 800;">🚚 Gestión de Proveedores</h1>
+        <p style="color: #64748b; margin-top: 5px;">Administra los contactos de quienes suministran tu materia prima.</p>
+      </div>
+
+      <div class="top-bar">
+        <div class="search-box">
+          <i class="bi bi-search"></i>
+          <input id="supplier-search" type="text" placeholder="Buscar por RIF, nombre, contacto o ubicación...">
+        </div>
+
+        <button id="btn-new-supplier" class="btn-primary" style="padding: 10px 20px; font-weight: bold; border-radius: 8px; white-space: nowrap;">
+          <i class="bi bi-plus-lg"></i> Nuevo Proveedor
+        </button>
+      </div>
+
+      <div class="card" style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); overflow-x: auto; border: 1px solid #e2e8f0;">
+        <table class="table" id="suppliers-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead style="background: #f1f5f9; color: #475569; font-size: 0.85rem; text-transform: uppercase;">
+            <tr>
+              <th style="padding: 15px; width: 60px;">ID</th>
+              <th style="padding: 15px;">RIF / Documento</th>
+              <th style="padding: 15px;">Proveedor / Empresa</th>
+              <th style="padding: 15px;">Contacto</th>
+              <th style="padding: 15px;">Teléfono</th>
+              <th style="padding: 15px;">Condiciones</th>
+              <th style="padding: 15px; text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody style="color: #334155; font-size: 0.9rem;">
+            </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="supplier-modal">
+  <div class="modal-content" style="max-width: 650px; border-radius: 16px;">
+    
+    <h2 id="supplier-modal-title" style="margin-top: 0; color: #1e293b; font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">Nuevo Proveedor</h2>
+
+    <form id="supplier-form">
+      <input type="hidden" id="supplier-id">
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>RIF / Cédula / Tax ID *</label>
+          <input type="text" id="supplier-rif" placeholder="Ej: J-12345678-9" required>
+        </div>
+
+        <div class="form-group">
+          <label>Nombre de la Empresa o Persona *</label>
+          <input type="text" id="supplier-name" placeholder="Ej: Distribuidora El Agro C.A." required>
+        </div>
+
+        <div class="form-group">
+          <label>Persona de Contacto</label>
+          <input type="text" id="supplier-contact" placeholder="Ej: Ing. Pedro Pérez">
+        </div>
+
+        <div class="form-group">
+          <label>Teléfono de Contacto</label>
+          <input type="text" id="supplier-phone" placeholder="Ej: +58 412 1234567">
+        </div>
+
+        <div class="form-group">
+          <label>Correo Electrónico</label>
+          <input type="email" id="supplier-email" placeholder="compras@proveedor.com">
+        </div>
+
+        <div class="form-group">
+          <label>Condiciones de Pago</label>
+          <input type="text" id="supplier-payment-terms" placeholder="Ej: Contado, Crédito 15 días...">
+        </div>
+
+        <div class="form-group full-width">
+          <label>Dirección Fiscal / Ubicación</label>
+          <input type="text" id="supplier-location" placeholder="Ciudad, Estado, Dirección detallada...">
+        </div>
+
+        <div class="form-group full-width">
+          <label>Notas Adicionales (Internas)</label>
+          <textarea id="supplier-notes" rows="2" placeholder="Ej: No trabajan feriados, despachan solo por la mañana..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+        <button type="button" id="supplier-cancel" class="btn-secondary" style="border-radius: 8px;">Cancelar</button>
+        <button type="submit" class="btn-primary" style="border-radius: 8px;"><i class="bi bi-save"></i> Guardar Proveedor</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal hidden" id="confirm-modal">
+  <div class="modal-content" style="max-width: 400px; text-align: center;">
+    <div style="font-size: 3rem; color: #ef4444; margin-bottom: 10px;"><i class="bi bi-exclamation-circle"></i></div>
+    <h2 id="confirm-title" style="margin-top: 0;">Confirmar</h2>
+    <p id="confirm-message" class="text-soft" style="margin: 10px 0 20px;">¿Estás segura?</p>
+    <div class="modal-actions" style="justify-content: center;">
+      <button type="button" class="btn-secondary" id="confirm-cancel">No, cancelar</button>
+      <button type="button" class="btn-danger" id="confirm-ok">Sí, confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="alert-modal">
+  <div class="modal-content" style="max-width: 400px; text-align: center;">
+    <h2 id="alert-title" style="margin-top: 0;">Aviso</h2>
+    <p id="alert-message" class="text-soft" style="margin: 10px 0 20px;">Mensaje</p>
+    <div class="modal-actions" style="justify-content: center;">
+      <button type="button" class="btn-primary" id="alert-ok" style="width: 100%;">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/proveedores.js"></script>
+</body>
+</html>

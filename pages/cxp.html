@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>CxP | Kont Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    :root {
+      --primary-wine: #9f1239; /* Color para pagos/proveedores */
+      --danger: #e11d48;
+      --slate-200: #e2e8f0;
+      --slate-400: #94a3b8;
+      --slate-900: #0f172a;
+    }
+
+    body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; }
+
+    .content-body { padding: 30px; max-width: 1100px; margin: 0 auto; }
+
+    /* Buscador Moderno */
+    .search-wrapper {
+      background: white; padding: 12px 20px; border-radius: 16px;
+      display: flex; align-items: center; gap: 12px;
+      border: 1px solid var(--slate-200); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+      margin-bottom: 25px;
+    }
+    .search-wrapper input { border: none; outline: none; width: 100%; font-size: 1rem; }
+
+    /* Lista de Proveedores */
+    .provider-grid { display: flex; flex-direction: column; gap: 12px; }
+
+    .provider-card {
+      background: white; border-radius: 18px; padding: 20px 25px;
+      display: grid; grid-template-columns: 1.5fr 1fr 1fr auto; align-items: center;
+      gap: 20px; border: 1px solid transparent; transition: 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .provider-card:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.04); border-color: var(--slate-200); }
+
+    .provider-info { display: flex; align-items: center; gap: 15px; }
+    .provider-icon { 
+      width: 48px; height: 48px; background: #fff1f2; 
+      border-radius: 12px; display: flex; align-items: center; 
+      justify-content: center; color: var(--primary-wine); font-size: 1.3rem;
+    }
+    .provider-details h3 { margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--slate-900); }
+    .provider-details p { margin: 0; font-size: 0.8rem; color: var(--slate-400); font-weight: 500; }
+
+    /* Badge de Vencimiento */
+    .due-box { text-align: center; }
+    .due-tag { 
+      font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 8px;
+      background: #f1f5f9; color: #475569; display: inline-flex; align-items: center; gap: 5px;
+    }
+    .due-tag.overdue { background: #fee2e2; color: var(--danger); border: 1px solid #fecaca; }
+
+    .amount-box { text-align: right; }
+    .amount-label { display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--slate-400); font-weight: 700; }
+    .amount-val { font-size: 1.15rem; font-weight: 900; color: var(--slate-900); }
+
+    .btn-pay {
+      height: 45px; width: 45px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      background: #f8fafc; color: var(--primary-wine);
+      border: 1px solid var(--slate-200); transition: 0.2s;
+    }
+    .btn-pay:hover { background: var(--primary-wine); color: white; border-color: var(--primary-wine); }
+
+    @media (max-width: 850px) {
+      .provider-card { grid-template-columns: 1fr 1fr auto; }
+      .due-box { grid-column: 1 / 2; text-align: left; padding-left: 63px; }
+    }
+
+    @media (max-width: 600px) {
+      .provider-card { grid-template-columns: 1fr auto; gap: 10px; }
+      .due-box, .amount-box { grid-column: 1; text-align: left; padding-left: 63px; }
+      .btn-pay { grid-column: 2; grid-row: 1 / 4; height: 100%; width: 50px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebar"></div>
+
+  <div class="content">
+    <div id="header"></div>
+
+    <main class="content-body">
+      <div class="page-header" style="margin-bottom: 25px;">
+        <h1 style="font-weight: 900; color: var(--slate-900); margin: 0;">📉 Cuentas por Pagar</h1>
+        <p style="color: var(--slate-400); margin-top: 5px;">Control de deudas y facturas de proveedores.</p>
+      </div>
+
+      <div class="search-wrapper">
+        <i class="bi bi-search" style="color: var(--slate-400);"></i>
+        <input id="search-supplier" type="text" placeholder="Buscar proveedor...">
+      </div>
+
+      <div id="cxp-list" class="provider-grid">
+        </div>
+    </main>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/cxp.js"></script>
+</body>
+</html>

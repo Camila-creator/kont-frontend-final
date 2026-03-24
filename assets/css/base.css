@@ -1,0 +1,303 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+/* =========================================================
+   1. VARIABLES (ROOT) Y ANIMACIONES
+   ========================================================= */
+:root {
+  --color-primary: #2563eb;      /* Azul */
+  --color-success: #16a34a;      /* Verde */
+  --color-danger: #dc2626;       /* Rojo */
+  --color-bg: #f8fafc;           /* Fondo principal */
+  --color-bg-soft: #f5f7fa;      /* Fondo suave */
+  --color-text: #111827;         /* Negro suave */
+  --color-text-soft: #6b7280;    /* Gris */
+  --color-border: #e5e7eb;
+  
+  --font-main: 'Poppins', sans-serif;
+  
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --shadow-sm: 0 2px 6px rgba(0,0,0,0.06);
+  --shadow-md: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.page {
+    animation: subtleFade 0.25s ease-in forwards;
+}
+
+@keyframes subtleFade {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+/* =========================================================
+   2. RESET BÁSICO
+   ========================================================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-x: hidden;
+}
+
+input, select, textarea { 
+    font-size: 16px !important; 
+    font-family: var(--font-main);
+}
+
+/* =========================================================
+   3. SIDEBAR PREMIUM (Dark Slate)
+   ========================================================= */
+.sidebar {
+    width: 260px;
+    height: 100vh;
+    background-color: #0f172a;
+    color: #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), left 0.3s ease;
+    overflow-x: hidden !important; 
+}
+
+.sidebar-logo {
+    padding: 20px 25px;
+    border-bottom: 1px solid #1e293b;
+    display: flex;
+    align-items: center;
+    min-height: 75px;
+}
+
+.brand {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-icon {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    font-weight: 900;
+    font-size: 1.2rem;
+    width: 35px; height: 35px;
+    display: flex; justify-content: center; align-items: center;
+    border-radius: 10px;
+}
+
+.brand-text {
+    color: #f8fafc;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.sidebar-menu {
+    flex-grow: 1;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+}
+
+.sidebar-menu::-webkit-scrollbar { width: 5px; }
+.sidebar-menu::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+
+.menu-section {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #64748b;
+    font-weight: 800;
+    margin: 20px 0 5px 10px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.menu-item i {
+    font-size: 1.1rem;
+    color: #64748b;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.menu-item:hover { background-color: #1e293b; color: #f8fafc; padding-left: 18px; }
+.menu-item.active { background-color: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 700; border-left: 4px solid #10b981; }
+
+.sidebar-footer { padding: 15px; border-top: 1px solid #1e293b; background-color: #0b1120; }
+.footer-text { color: #475569; font-weight: 600; font-size: 0.75rem; text-align: center; }
+
+/* =========================================================
+   4. HEADER PREMIUM (BLOQUE REUPERADO)
+   ========================================================= */
+.header {
+    height: 70px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 25px;
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#btn-toggle-sidebar {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#btn-toggle-sidebar:hover { background: #e2e8f0; color: #1e293b; }
+
+.header-title { display: flex; flex-direction: column; }
+#header-page-title { font-size: 1.1rem; font-weight: 800; color: #1e293b; }
+#header-page-subtitle { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+
+.user-name { font-size: 0.9rem; font-weight: 700; color: #334155; }
+
+.user-avatar {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 800;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+/* =========================================================
+   5. CONTENIDO Y LÓGICA DE COLAPSO
+   ========================================================= */
+.sidebar.collapsed { width: 80px; }
+.sidebar.collapsed .brand-text, 
+.sidebar.collapsed .menu-section, 
+.sidebar.collapsed .menu-text, 
+.sidebar.collapsed .footer-text { display: none !important; }
+
+.content {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 20px;
+}
+
+.content.expanded { margin-left: 80px; width: calc(100% - 80px); }
+
+/* =========================================================
+   6. BOTONES Y UTILIDADES
+   ========================================================= */
+button, a.btn-primary, button.btn-primary, .btn-success, .btn-danger, .btn-secondary {
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 7px 12px;
+    font-size: 13px;
+    transition: opacity 0.2s;
+}
+
+.btn-primary { background: var(--color-primary); color: #fff; }
+.btn-success { background: var(--color-success); color: #fff; }
+.btn-danger { background: var(--color-danger); color: #fff; }
+.btn-secondary { background: #e5e7eb; color: var(--color-text); }
+
+.badge-confirmado {
+    background: #dcfce7 !important;
+    color: #166534 !important;
+    border: 1px solid #bbf7d0;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* =========================================================
+   7. ADAPTACIÓN MOBILE
+   ========================================================= */
+@media (max-width: 768px) {
+    .sidebar { width: 280px; left: -280px; }
+    .sidebar.active { left: 0 !important; }
+    .content { margin-left: 0 !important; width: 100% !important; }
+    
+    .header-page-subtitle, .user-name { display: none !important; }
+    .header { padding: 0 15px; }
+
+    .sidebar-overlay {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(3px);
+        display: none; z-index: 950;
+    }
+    .sidebar-overlay.active { display: block; }
+
+    .btn-close-mobile {
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.1); color: #cbd5e1;
+        font-size: 1.5rem; width: 40px; height: 40px; border-radius: 8px; margin-left: auto;
+    }
+}
+
+@media (min-width: 769px) { .btn-close-mobile { display: none !important; } }
+
+/* Modales */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: rgba(15, 23, 42, 0.7); display: flex;
+    justify-content: center; align-items: center; z-index: 9999;
+    backdrop-filter: blur(4px);
+}
+.modal.hidden { display: none !important; }

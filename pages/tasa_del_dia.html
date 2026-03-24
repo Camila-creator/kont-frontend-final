@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Divisas | Agromedic Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    /* VARIABLES Y ESTILOS ESPECÍFICOS */
+    :root {
+      --color-usd: #10b981;
+      --color-eur: #3b82f6;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 25px;
+      align-items: start;
+    }
+
+    /* TARJETAS DE TASA ACTUAL */
+    .rate-display-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .rate-card {
+      padding: 20px;
+      border-radius: 16px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+
+    .rate-card.usd { background: linear-gradient(135deg, var(--color-usd) 0%, #059669 100%); }
+    .rate-card.eur { background: linear-gradient(135deg, var(--color-eur) 0%, #1d4ed8 100%); }
+
+    .rate-card h2 { margin: 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
+    .rate-card .value { font-size: 1.8rem; font-weight: 800; margin-top: 5px; }
+    .rate-card i { position: absolute; right: -10px; bottom: -10px; font-size: 4rem; opacity: 0.2; transform: rotate(-15deg); }
+
+    /* FORMULARIO DE ACTUALIZACIÓN */
+    .update-card {
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+    .input-combo {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .input-combo select {
+      padding: 12px;
+      border: 2px solid #f1f5f9;
+      border-radius: 10px;
+      font-weight: 700;
+      outline: none;
+      background: #f8fafc;
+    }
+
+    .input-combo input {
+      flex: 1;
+      padding: 12px 15px;
+      border: 2px solid #f1f5f9;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    .input-combo input:focus { border-color: var(--color-usd); background: #f0fdf4; }
+
+    /* TABLA DE HISTORIAL */
+    .history-card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+    }
+
+    .table-divisas { width: 100%; border-collapse: collapse; }
+    .table-divisas th { background: #f8fafc; padding: 15px; font-size: 0.75rem; color: #64748b; text-transform: uppercase; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    .table-divisas td { padding: 15px; color: #1e293b; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+
+    .badge-currency {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 800;
+    }
+    .badge-usd { background: #dcfce7; color: #166534; }
+    .badge-eur { background: #dbeafe; color: #1e40af; }
+
+    .toast-msg {
+    background: white;
+    color: #1e293b;
+    padding: 12px 20px;
+    border-radius: 12px;
+    border-left: 5px solid #10b981;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.toast-msg.error { border-left-color: #ef4444; }
+
+    @media (max-width: 900px) { .grid-container { grid-template-columns: 1fr; } }
+
+    @media (max-width: 900px) {
+    /* 1. Forzamos que la cuadrícula sea de una sola columna */
+    .grid-container {
+        grid-template-columns: 1fr !important;
+        gap: 15px;
+        width: 100%;
+        overflow-x: hidden; /* Evita fugas de contenido */
+    }
+
+    /* 2. Ajustamos el padding de la página para ganar espacio */
+    .page {
+        padding: 10px !important;
+    }
+
+    /* 3. Reducimos el tamaño de las tarjetas de tasa */
+    .rate-card {
+        padding: 15px;
+    }
+    
+    .rate-card .value {
+        font-size: 1.4rem; /* Un poco más pequeño para que no desborde */
+    }
+
+    /* 4. Quitamos el scroll de la tabla convirtiéndola en bloques */
+    .table-divisas, 
+    .table-divisas thead, 
+    .table-divisas tbody, 
+    .table-divisas th, 
+    .table-divisas td, 
+    .table-divisas tr {
+        display: block;
+        width: 100%;
+    }
+
+    .table-divisas thead {
+        display: none; /* Escondemos cabecera */
+    }
+
+    .table-divisas tr {
+        margin-bottom: 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: white;
+    }
+
+    .table-divisas td {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 15px !important;
+        text-align: right;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    /* 5. Etiquetas a la izquierda (Asegúrate de poner data-label en el JS) */
+    .table-divisas td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: #94a3b8;
+        font-size: 0.75rem;
+        text-align: left;
+    }
+
+    /* 6. Arreglo para el formulario de actualización */
+    .input-combo {
+        flex-direction: column; /* Apila los elementos verticalmente */
+        gap: 12px; /* Espacio real entre ellos */
+        margin-top: 15px;
+    }
+
+    .input-combo select, 
+    .input-combo input, 
+    .input-combo button {
+        width: 100% !important; /* Ocupan todo el ancho disponible */
+        height: 50px; /* Altura cómoda para tocar con el dedo */
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    .input-combo button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.2rem;
+        background: #022a97; /* Resalta el botón de guardar */
+        border: none;
+    }
+
+}
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebar"></div>
+  <div class="content">
+    <div id="header"></div>
+
+    <div class="page" style="padding: 25px; background: #f8fafc; min-height: calc(100vh - 70px);">
+      
+      <div class="page-header" style="margin-bottom: 25px;">
+        <h1 style="margin: 0; color: #1e293b; font-weight: 800;">💹 Monitor de Divisas</h1>
+        <p style="color: #64748b; margin-top: 5px;">Control de tasas BCV (Dólar/Euro) para transacciones en Venezuela.</p>
+      </div>
+
+      <div class="grid-container">
+        
+        <div class="panel-controls">
+          
+          <div class="rate-display-grid">
+            <div class="rate-card usd">
+              <h2>Dólar BCV</h2>
+              <div class="value" id="rate-usd-val">0.00</div>
+              <i class="bi bi-currency-dollar"></i>
+            </div>
+            <div class="rate-card eur">
+              <h2>Euro BCV</h2>
+              <div class="value" id="rate-eur-val">0.00</div>
+              <i class="bi bi-currency-euro"></i>
+            </div>
+          </div>
+
+          <div class="update-card">
+            <h3 style="margin: 0; font-size: 1rem; color: #1e293b;"><i class="bi bi-pencil-square"></i> Actualizar Valor</h3>
+            <p style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">El cambio afectará a todos los cálculos automáticos del sistema.</p>
+            
+            <div class="input-combo">
+              <select id="new-rate-currency">
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+              </select>
+              <input type="number" id="new-rate-input" step="0.01" placeholder="Ej: 36.50">
+              <button onclick="handleUpdateRate()" class="btn-primary" style="padding: 0 20px; border-radius: 10px;">
+                <i class="bi bi-save-fill"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="history-card">
+          <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 1rem; color: #1e293b;">Historial de Cambios</h3>
+            <button class="btn-secondary" style="font-size: 0.75rem; padding: 5px 10px;" onclick="loadExchangeHistory()">
+                <i class="bi bi-arrow-clockwise"></i> Actualizar
+            </button>
+          </div>
+          
+          <table class="table-divisas">
+            <thead>
+              <tr>
+                <th>Fecha y Hora</th>
+                <th>Moneda</th>
+                <th>Tasa de Cambio</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="exchange-history-table">
+              </tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/exchange.js"></script> 
+
+</body>
+</html>

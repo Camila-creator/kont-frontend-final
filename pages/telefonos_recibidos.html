@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teléfonos Recibidos | Kont Admin</title>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    /* Usamos tus mismos estilos de productos para mantener la coherencia */
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap;}
+    .search-box { display: flex; align-items: center; background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 5px 15px; flex-grow: 1; max-width: 400px; }
+    .search-box i { color: #94a3b8; margin-right: 10px; }
+    .search-box input { border: none; outline: none; width: 100%; padding: 8px 0; font-size: 0.95rem; }
+
+    .badge-pendiente { background: #fef3c7; color: #d97706; } /* Naranja/Amarillo para espera */
+    .badge-recibido { background: #e0f2fe; color: #0284c7; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+    .full-width { grid-column: span 2; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-weight: 600; color: #475569; font-size: 0.85rem; }
+    .form-group input, .form-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; outline: none; transition: border 0.3s; }
+    
+    .btn-process { background: #10b981; color: white; } /* Verde para procesar */
+    .btn-process:hover { background: #059669; }
+
+    @media (max-width: 768px) {
+        /* 1. AJUSTES DE TABLA A TARJETAS */
+        #received-table thead { display: none; }
+        #received-table, #received-table tbody, #received-table tr, #received-table td {
+            display: block;
+            width: 100%;
+        }
+
+        #received-table tbody tr {
+            background: white;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        /* Venta # (Arriba a la izquierda) */
+        #received-table td:nth-child(2) {
+            font-weight: 800;
+            color: #475569;
+            padding: 0;
+            margin-bottom: 4px;
+        }
+
+        /* Modelo/Referencia (Destacado) */
+        #received-table td:nth-child(4) {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #1e293b;
+            padding: 0;
+            margin-bottom: 8px;
+        }
+
+        /* Cliente y Fecha */
+        #received-table td:nth-child(1),
+        #received-table td:nth-child(3) {
+            display: inline-block;
+            width: auto;
+            margin-right: 15px;
+            font-size: 0.85rem;
+            color: #64748b;
+            padding: 0;
+        }
+
+        /* Monto Acreditado (Posicionado como un badge) */
+        #received-table td:nth-child(5) {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: auto;
+            padding: 0;
+            font-size: 1rem;
+        }
+
+        /* ACCIONES (EL ARREGLO DE SEPARACIÓN) */
+        #received-table td:last-child {
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 1px solid #f1f5f9;
+            display: flex !important; /* Forzamos flex para el gap */
+            justify-content: center !important;
+        }
+
+        .btn-process {
+            width: 100% !important; /* En este caso un solo botón grande */
+            height: 48px !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            border-radius: 12px !important;
+            font-weight: 700 !important;
+        }
+
+        /* 2. MODAL Y BOTONES (CANCELAR/GUARDAR SEPARADOS) */
+        .modal-content {
+            width: 95% !important;
+            padding: 20px 15px !important;
+        }
+
+        .form-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+        .full-width { grid-column: span 1 !important; }
+
+        .modal-actions {
+            display: flex !important;
+            flex-direction: column-reverse !important; /* Guardar arriba, Cancelar abajo */
+            gap: 12px !important; /* ESTO LOS SEPARA */
+            margin-top: 25px !important;
+        }
+
+        .modal-actions button {
+            width: 100% !important;
+            height: 50px !important;
+            font-weight: 700 !important;
+            margin: 0 !important;
+            border-radius: 12px !important;
+        }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebar"></div>
+  <div class="content">
+    <div id="header"></div>
+
+    <div class="page" style="padding: 25px; background: #f8fafc; min-height: calc(100vh - 70px);">
+
+      <div class="page-header" style="margin-bottom: 20px;">
+        <h1 style="margin: 0; color: #1e293b; font-weight: 800;">📱 Teléfonos Recibidos</h1>
+        <p style="color: #64748b; margin-top: 5px;">Equipos recibidos como método de pago pendientes por ingresar al inventario.</p>
+      </div>
+
+      <div class="top-bar">
+        <div class="search-box">
+          <i class="bi bi-search"></i>
+          <input type="text" id="search-received" placeholder="Buscar por modelo, venta o cliente...">
+        </div>
+        </div>
+
+      <div class="card" style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); overflow-x: auto; border: 1px solid #e2e8f0;">
+        <table class="table" id="received-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead style="background: #f1f5f9; color: #475569; font-size: 0.85rem; text-transform: uppercase;">
+            <tr>
+              <th style="padding: 15px;">Fecha</th>
+              <th style="padding: 15px;">Venta #</th>
+              <th style="padding: 15px;">Cliente</th>
+              <th style="padding: 15px;">Modelo Referencia</th>
+              <th style="padding: 15px;">Monto Acreditado</th>
+              <th style="padding: 15px; text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody style="color: #334155; font-size: 0.9rem;">
+             </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="process-modal">
+  <div class="modal-content" style="max-width: 600px; border-radius: 16px;">
+
+    <h2 style="margin-top: 0; color: #1e293b; font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">Procesar Equipo</h2>
+
+    <form id="process-form">
+      <input type="hidden" id="receive-id">
+
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label>Nombre Oficial del Producto/Insumo *</label>
+          <input type="text" id="proc-name" placeholder="Ej. iPhone 11 64GB Negro (Usado)" required>
+        </div>
+
+        <div class="form-group">
+          <label>IMEI / Serial *</label>
+          <input type="text" id="proc-imei" placeholder="Escanea o escribe el IMEI" required>
+        </div>
+
+        <div class="form-group">
+          <label>Destino en Inventario *</label>
+          <select id="proc-destination" required>
+            <option value="PRODUCTO">Producto (Para Re-venta)</option>
+            <option value="INSUMO">Insumo (Para Kits / Combos)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Categoría *</label>
+          <input type="text" id="proc-category" list="category-list" placeholder="Selecciona categoría..." required>
+        </div>
+
+        <div class="form-group">
+          <label>Costo de Recepción ($)</label>
+          <input type="number" id="proc-cost" step="0.01" readonly style="background: #f1f5f9; cursor: not-allowed;">
+        </div>
+
+        <div class="form-group" id="price-group">
+          <label>Precio de Venta Sugerido ($)</label>
+          <input type="number" id="proc-price" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+        <button type="button" id="btn-process-cancel" class="btn-secondary" style="border-radius: 8px;">Cancelar</button>
+        <button type="submit" class="btn-primary" style="border-radius: 8px; background: #10b981;"><i class="bi bi-check-circle"></i> Ingresar a Inventario</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/telefonos_recibidos.js"></script>
+
+</body>
+</html>

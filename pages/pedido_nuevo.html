@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Nuevo Pedido | Kont Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    .section-title { font-size: 1.05rem; font-weight: 800; color: #1e293b; margin-top: 0; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;}
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;}
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-weight: 600; color: #475569; font-size: 0.85rem; }
+    .form-group select, .form-group input { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; transition: border 0.3s; background: #f8fafc;}
+    .form-group select:focus, .form-group input:focus { border-color: #10b981; background: white;}
+    
+    .auto-panel { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;}
+    .auto-label { font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 5px;}
+    .auto-badges { display: flex; gap: 8px; }
+    
+    .badge { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; display: inline-block; letter-spacing: 0.5px;}
+    .b-retail { background: #e0f2fe; color: #0284c7; }
+    .b-mayor { background: #f3e8ff; color: #a855f7; }
+    .b-contado { background: #dcfce7; color: #16a34a; }
+    .b-credito { background: #ffedd5; color: #ea580c; }
+    .b-null { background: #e2e8f0; color: #64748b; }
+    
+    .item-adder { background: #f8fafc; border: 1px solid #10b981; border-radius: 12px; padding: 20px; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; position: relative;}
+    .price-preview { background: white; border: 1px dashed #cbd5e1; padding: 8px 15px; border-radius: 8px; text-align: center; min-width: 120px;}
+    .price-preview span { display: block; font-size: 0.75rem; color: #64748b; font-weight: 600;}
+    .price-preview b { font-size: 1.1rem; color: #1e293b; }
+    
+    .invoice-table { width: 100%; border-collapse: collapse; text-align: left; margin-bottom: 20px;}
+    .invoice-table th { background: #f1f5f9; color: #475569; font-size: 0.8rem; text-transform: uppercase; padding: 12px 15px; border-bottom: 2px solid #e2e8f0;}
+    .invoice-table td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 0.95rem; font-weight: 500;}
+    .money-col { text-align: right; padding-right: 15px !important; font-variant-numeric: tabular-nums; }
+    
+    .invoice-summary { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; width: 320px; margin-left: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.02);}
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; color: #475569;}
+    .summary-total { display: flex; justify-content: space-between; margin-top: 15px; padding-top: 10px; border-top: 2px dashed #e2e8f0; font-size: 1.3rem; font-weight: 900; color: #1e293b;}
+    
+    .summary-bs { display: flex; justify-content: space-between; margin-top: 10px; font-size: 1.1rem; font-weight: 700; color: #64748b; border-top: 1px solid #f1f5f9; padding-top: 10px;}
+
+    .btn-icon { padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; color: white; font-size: 0.9rem;}
+    .btn-del { background: #ef4444; } .btn-del:hover { background: #dc2626; }
+    
+    .rate-selector-btn { 
+      cursor: pointer; 
+      padding: 8px 15px; 
+      border-radius: 10px; 
+      font-size: 0.85rem; 
+      font-weight: 700; 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      transition: all 0.2s;
+      border: 2px solid transparent;
+      opacity: 0.5; 
+      background: #1e293b;
+      color: white;
+    }
+    .rate-selector-btn:hover { opacity: 0.8; transform: translateY(-1px); }
+    .rate-selector-btn.active { 
+      opacity: 1; 
+      border-color: #10b981; 
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+    .rate-selector-btn i { font-size: 1rem; }
+
+    /* Estilos de Navegación Móvil */
+    .mobile-nav-footer { display: none; }
+    .hidden { display: none !important; }
+
+    @media (max-width: 768px) {
+        .page { padding: 15px !important; padding-bottom: 100px !important; }
+        .card { padding: 15px !important; border-radius: 12px !important; }
+        
+        /* Stepper logic */
+        .step-content:not(.active) { display: none !important; }
+
+        .page-header { flex-direction: column; align-items: stretch !important; gap: 10px; }
+        .rate-selector-btn { justify-content: center; width: 100%; }
+
+        .form-grid { grid-template-columns: 1fr !important; }
+        .form-group { grid-column: span 1 !important; }
+
+        .item-adder { 
+            flex-direction: column; 
+            align-items: stretch; 
+            padding: 25px 15px 15px 15px; 
+            gap: 12px;
+        }
+        .item-adder .form-group { min-width: 100%; }
+        .price-preview { width: 100%; padding: 12px; }
+        #btn-add-item { width: 100%; height: 50px; font-size: 1rem; }
+
+        /* Tabla a Cards */
+        .invoice-table thead { display: none; }
+        .invoice-table, .invoice-table tbody, .invoice-table tr, .invoice-table td {
+            display: block; width: 100%;
+        }
+        .invoice-table tr {
+            position: relative;
+            padding: 12px 0;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        .invoice-table td { border: none; padding: 4px 0; }
+        .invoice-table td:last-child {
+            position: absolute; top: 10px; right: 0; width: auto;
+        }
+
+        .invoice-summary { width: 100%; margin-top: 20px; }
+
+        /* Botones de Navegación Inferior */
+        .mobile-nav-footer {
+            display: flex;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: white;
+            padding: 15px 20px;
+            gap: 10px;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        .mobile-nav-footer button { flex: 1; padding: 12px; border-radius: 10px; font-weight: 700; border: none; }
+        
+        /* Ocultar acciones originales en mobile si no es el último paso */
+        .modal-actions { display: none; }
+        .active-last-step .modal-actions { display: flex; flex-direction: column-reverse; gap: 10px; }
+        .active-last-step .modal-actions button, .active-last-step .modal-actions a { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebar"></div>
+  <div class="content">
+    <div id="header"></div>
+
+    <div class="page" id="main-stepper" style="padding: 25px; background: #f8fafc; min-height: calc(100vh - 70px);">
+      
+      <div class="page-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h1 style="margin: 0; color: #1e293b; font-weight: 800;">🛒 Crear Pedido</h1>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <div id="btn-rate-usd" class="rate-selector-btn active">
+              <i class="bi bi-currency-dollar"></i> BCV: <span id="val-rate-usd">0.00</span>
+          </div>
+          <div id="btn-rate-eur" class="rate-selector-btn">
+              <i class="bi bi-currency-euro"></i> BCV: <span id="val-rate-eur">0.00</span>
+          </div>
+          <a class="btn-secondary" href="./pedidos.html" style="border-radius: 8px; margin-left: 10px;">
+              <i class="bi bi-arrow-left"></i> <span class="d-none-mobile">Volver</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="step-content active" id="step-1">
+        <div class="card" style="background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 20px; border: 1px solid #e2e8f0;">
+          <h2 class="section-title"><i class="bi bi-person-vcard" style="color:#0284c7;"></i> 1. Información del Cliente</h2>
+          
+          <div class="form-grid">
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Cliente *</label>
+              <select id="order-client" required>
+                <option value="">Selecciona cliente...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Condición de Pago</label>
+              <select id="order-terms">
+                <option value="AUTO">Automático</option>
+                <option value="CONTADO">Contado</option>
+                <option value="CREDITO">Crédito</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tipo de Precio</label>
+              <select id="order-price-mode">
+                <option value="AUTO">Automático</option>
+                <option value="RETAIL">Retail</option>
+                <option value="MAYORISTA">Mayorista</option>
+              </select>
+            </div>
+            <div class="auto-panel">
+              <span class="auto-label">Estado</span>
+              <div id="order-auto-result" class="auto-badges">
+                <span class="badge b-null">Esperando...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top: 15px; margin-bottom: 0;">
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Notas Internas</label>
+              <input id="order-notes" type="text" placeholder="Ej: Entregar por MRW...">
+            </div>
+            <div class="form-group">
+              <label>Descuento ($)</label>
+              <input id="order-discount" type="number" min="0" step="0.01" value="0">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-content" id="step-2">
+        <div class="item-adder" style="margin-bottom: 20px; background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+          <h2 style="position: absolute; top: -12px; left: 20px; background: white; padding: 0 10px; margin: 0; font-size: 0.9rem; font-weight: 800; color: #10b981; border: 1px solid #e2e8f0; border-radius: 5px;">
+            <i class="bi bi-upc-scan"></i> 2. Agregar Productos
+          </h2>
+
+          <div class="form-group" style="flex: 3; min-width: 250px;">
+            <label>Producto a vender</label>
+            <select id="item-product" style="border-color: #10b981;">
+              <option value="">Selecciona...</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="flex: 0.5; min-width: 80px;">
+            <label>Cant.</label>
+            <input id="item-qty" type="number" min="1" step="1" value="1">
+          </div>
+
+          <div id="serial-input-container" class="form-group" style="flex: 2; min-width: 200px; display: none;">
+            <label style="color: #6366f1;"><i class="bi bi-tag-fill"></i> IMEIs (Comas)</label>
+            <input id="item-serials" type="text" placeholder="Ej: 3544...">
+          </div>
+
+          <div class="price-preview">
+            <span>Unitario</span>
+            <b id="item-price">$ 0.00</b>
+          </div>
+
+          <button id="btn-add-item" class="btn-primary" style="height: 42px; padding: 0 20px; border-radius: 8px; font-weight: bold; background: #10b981; border:none;">
+            <i class="bi bi-plus-lg"></i> Añadir
+          </button>
+        </div>
+      </div>
+
+      <div class="step-content" id="step-3">
+        <div class="card" style="background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid #e2e8f0;">
+          <h2 class="section-title"><i class="bi bi-receipt" style="color:#8b5cf6;"></i> 3. Detalle de Facturación</h2>
+
+          <div style="overflow-x: auto;">
+            <table class="invoice-table" id="items-table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th style="text-align: center;">Cant.</th>
+                  <th class="money-col">Unit.</th>
+                  <th class="money-col">Subtotal</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="invoice-summary">
+            <div class="summary-row"><span>Items:</span> <b id="sum-units">0</b></div>
+            <div class="summary-row"><span>Subtotal:</span> <b id="sum-subtotal">$ 0.00</b></div>
+            <div class="summary-total"><span>TOTAL USD:</span> <span id="sum-total" style="color:#10b981;">$ 0.00</span></div>
+            <div class="summary-bs">
+              <span id="label-bs-currency" style="font-size: 0.85rem; color: #64748b;">Efectivo Bs.</span>
+              <b id="total-bs-amount">Bs. 0.00</b>
+            </div>
+          </div>
+
+          <div class="modal-actions" style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px; justify-content: flex-end;">
+            <a class="btn-secondary" href="./pedidos.html">Cancelar</a>
+            <button id="btn-save-draft" class="btn-primary" style="padding: 12px 30px; font-size: 1.05rem;">
+              <i class="bi bi-cloud-upload"></i> Guardar Borrador
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div> </div> </div> <div class="mobile-nav-footer">
+    <button id="btn-prev-step" class="btn-secondary hidden" style="background: #e2e8f0; color: #475569;">Anterior</button>
+    <button id="btn-next-step" class="btn-primary" style="background: #1e293b;">Siguiente</button>
+</div>
+
+<div class="modal hidden" id="alert-modal">
+  <div class="modal-content" style="max-width: 400px; text-align: center;">
+    <h2 id="alert-title">Aviso</h2>
+    <p id="alert-message" class="text-soft">Mensaje</p>
+    <div class="modal-actions" style="justify-content: center;">
+      <button type="button" class="btn-primary" id="alert-ok" style="width: 100%;">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/pedido_nuevo.js"></script>
+
+<script>
+    // Lógica de Navegación por Pasos (UI Only)
+    let currentStep = 1;
+    const btnNext = document.getElementById('btn-next-step');
+    const btnPrev = document.getElementById('btn-prev-step');
+    const stepperContainer = document.getElementById('main-stepper');
+
+    function updateStepUI() {
+        // Actualizar visibilidad de pasos
+        document.querySelectorAll('.step-content').forEach((el, idx) => {
+            el.classList.toggle('active', (idx + 1) === currentStep);
+        });
+
+        // Toggle botones
+        btnPrev.classList.toggle('hidden', currentStep === 1);
+        
+        if (currentStep === 3) {
+            btnNext.classList.add('hidden');
+            stepperContainer.classList.add('active-last-step');
+        } else {
+            btnNext.classList.remove('hidden');
+            stepperContainer.classList.remove('active-last-step');
+            btnNext.textContent = currentStep === 2 ? "Ver Resumen" : "Siguiente";
+        }
+        
+        window.scrollTo(0,0);
+    }
+
+    btnNext.onclick = () => {
+        if (currentStep === 1) {
+            const client = document.getElementById('order-client').value;
+            if (!client) return alert("Por favor selecciona un cliente");
+        }
+        if (currentStep < 3) {
+            currentStep++;
+            updateStepUI();
+        }
+    };
+
+    btnPrev.onclick = () => {
+        if (currentStep > 1) {
+            currentStep--;
+            updateStepUI();
+        }
+    };
+
+    // Detectar si es mobile al cargar para aplicar lógica
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            document.querySelectorAll('.step-content').forEach(el => el.classList.add('active'));
+        } else {
+            updateStepUI();
+        }
+    });
+</script>
+</body>
+</html>

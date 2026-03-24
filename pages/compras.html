@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Compras | Kont Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <style>
+    /* ESTILOS PREMIUM PARA COMPRAS */
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; background: white; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+    
+    .search-box { display: flex; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 5px 15px; min-width: 300px; flex-grow: 1; max-width: 500px;}
+    .search-box i { color: #94a3b8; margin-right: 10px; }
+    .search-box input { border: none; outline: none; width: 100%; padding: 8px 0; font-size: 0.95rem; background: transparent;}
+
+    /* Formulario Grid */
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;}
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-weight: 600; color: #475569; font-size: 0.85rem; }
+    .form-group select, .form-group input { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; transition: border 0.3s; background: #f8fafc;}
+    .form-group select:focus, .form-group input:focus { border-color: #10b981; background: white;}
+    
+    /* Escáner de Items (Adder) */
+    .item-adder { background: white; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px;}
+    
+    .invoice-table { width: 100%; border-collapse: collapse; text-align: left; margin-bottom: 20px;}
+    .invoice-table th { background: #f1f5f9; color: #475569; font-size: 0.8rem; text-transform: uppercase; padding: 10px 15px; border-bottom: 2px solid #e2e8f0;}
+    .invoice-table td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 0.9rem; font-weight: 500;}
+    .money-col { text-align: right; padding-right: 15px !important; font-variant-numeric: tabular-nums; }
+
+    /* Badges */
+    .badge { padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;}
+    .b-borrador { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;}
+    .b-confirmada { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0;}
+    .b-anulada { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca;}
+    .b-contado { background: #e0f2fe; color: #0284c7; }
+    .b-credito { background: #ffedd5; color: #ea580c; }
+    .b-inv-ok { color: #10b981; font-weight: 800;}
+    .b-inv-no { color: #94a3b8; font-weight: 600;}
+
+    .table-actions { display: flex; gap: 6px;}
+    .btn-icon { padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; color: white; font-size: 0.9rem;}
+    .btn-view { background: #3b82f6; } .btn-view:hover { background: #2563eb; }
+    .btn-check { background: #10b981; } .btn-check:hover { background: #059669; }
+    .btn-del { background: #ef4444; } .btn-del:hover { background: #dc2626; }
+
+    .tasa-tag { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; margin-bottom: 15px;}
+
+    /* === NUEVOS ESTILOS PARA EL MODAL DE PAGO === */
+    #pay-modal .modal-content {
+        background: #f8fafc;
+        border: none;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .payment-row-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        position: relative;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }/* Arreglo para que el modal de pagos sea scrolleable */
+#pay-modal .modal-content {
+    max-height: 90vh; /* Máximo 90% de la pantalla */
+    overflow-y: auto; /* Scroll vertical si el contenido crece */
+    display: flex;
+    flex-direction: column;
+}
+
+#pay-lines-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding-bottom: 20px;
+}
+
+.payment-row-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+    .payment-row-card:hover {
+        border-color: #0284c7;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .btn-remove-row {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background: #fee2e2;
+        color: #ef4444;
+        border: 1px solid #fecaca;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: 0.2s;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .btn-remove-row:hover {
+        background: #ef4444;
+        color: white;
+        transform: scale(1.1);
+    }
+
+    #btn-add-pay-line {
+        background: white;
+        border: 2px dashed #cbd5e1;
+        color: #64748b;
+        padding: 12px;
+        border-radius: 10px;
+        width: 100%;
+        cursor: pointer;
+        font-weight: 700;
+        transition: 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    #btn-add-pay-line:hover {
+        border-color: #0284c7;
+        color: #0284c7;
+        background: #f0f9ff;
+    }
+
+    .pay-bs-helper {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        background: #f1f5f9;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #475569;
+    }
+
+/* --- OPTIMIZACIONES MOBILE PARA COMPRAS (UNIFICADO Y COMPLETO) --- */
+@media (max-width: 768px) {
+    /* 1. Tabla principal de compras (Cards) - TAL CUAL LA TENÍAS */
+    #purchases-table thead { display: none; }
+    #purchases-table tbody tr {
+        display: block;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    #purchases-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: right;
+        padding: 8px 10px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    #purchases-table td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: #64748b;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+    }
+    #purchases-table td:last-child { border-bottom: none; justify-content: center; gap: 10px; }
+
+    /* 2. Item Adder (Carga de productos) */
+    .item-adder {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 15px;
+    }
+    .item-adder .form-group { width: 100% !important; }
+    .item-adder button { width: 100%; height: 45px !important; }
+
+    /* 3. Tasa BCV y Moneda */
+    .tasa-tag { flex-direction: column; align-items: flex-start; }
+    .tasa-tag > div { flex-direction: column; width: 100%; }
+    .tasa-tag div[style*="text-align: right"] { text-align: left !important; margin-top: 5px; }
+
+    /* 4. Barra superior */
+    .top-bar { flex-direction: column; align-items: stretch; }
+    .search-box { max-width: 100%; min-width: auto; }
+
+    /* 5. EL MODAL (Ajuste de estructura para que NO se corten los botones) */
+    .modal-content {
+        background: #ffffff !important;
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        padding: 0;
+        display: flex !important;
+        flex-direction: column !important;
+        max-height: 90vh !important; /* Limita la altura al 90% de la pantalla */
+        overflow: hidden !important; /* Evita que el modal entero haga scroll */
+    }
+
+    /* Contenedor del Título */
+    .modal-content > div:first-child {
+        background: #f8fafc !important;
+        padding: 15px 20px !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        flex-shrink: 0; /* No permite que el título se encoja */
+    }
+
+    /* Área de Contenido (Líneas de pago/productos) con Scroll */
+    #pay-lines-container, 
+    #purchase-form > div:not(.modal-actions):not(style) {
+        overflow-y: auto !important; /* El scroll SOLO va aquí */
+        padding: 15px !important;
+        flex-grow: 1 !important; /* Ocupa el espacio sobrante */
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Botones: Siempre visibles al final */
+    /* 5. Botones Grandes y Separados (Estilo Kont Admin) */
+    .modal-actions {
+        background: #f8fafc !important;
+        padding: 20px !important; /* Más espacio interno */
+        display: flex !important;
+        flex-direction: column-reverse !important; /* Uno sobre otro para que sean grandes */
+        gap: 12px !important; /* Separación entre botones */
+        border-top: 1px solid #e2e8f0 !important;
+        margin-top: auto !important;
+        flex-shrink: 0 !important;
+    }
+
+    .modal-actions button {
+        width: 100% !important; /* Ocupan todo el ancho disponible */
+        height: 50px !important; /* Altura generosa para el pulgar */
+        border-radius: 10px !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: background 0.2s ease;
+    }
+
+    /* Diferenciación visual clara */
+    .btn-secondary {
+        background: #ffffff !important;
+        color: #64748b !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    .btn-primary {
+        background: #2563eb !important; /* Tu azul principal */
+        color: white !important;
+        border: none !important;
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2) !important;
+    }
+
+    /* Ajuste para que los botones quepan bien en pantallas angostas */
+    @media (max-width: 480px) {
+        .modal-actions {
+            flex-direction: column-reverse !important;
+        }
+        .modal-actions button {
+            width: 100% !important;
+            padding: 12px !important;
+        }
+    }
+}
+
+/* Botón de agregar línea (Estilo que te gusta) */
+#btn-add-pay-line {
+    background: transparent !important;
+    border: 1px dashed #cbd5e1 !important;
+    color: #64748b !important;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+}
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div id="sidebar"></div>
+  <div class="content">
+    <div id="header"></div>
+
+    <div class="page" style="padding: 25px; background: #f8fafc; min-height: calc(100vh - 70px);">
+      <div class="page-header" style="margin-bottom: 20px;">
+        <h1 style="margin: 0; color: #1e293b; font-weight: 800;">📦 Compras e Ingresos</h1>
+        <p style="color: #64748b; margin-top: 5px;">Registra compras a proveedores y abastece tu inventario.</p>
+      </div>
+
+      <div class="top-bar">
+        <div class="search-box">
+          <i class="bi bi-search"></i>
+          <input id="purchases-search" type="text" placeholder="Buscar compra por ID, Proveedor o Nota...">
+        </div>
+        <button id="btn-new-purchase" class="btn-primary" style="padding: 10px 20px; font-weight: bold; border-radius: 8px;">
+          <i class="bi bi-cart-plus"></i> Nueva Compra
+        </button>
+      </div>
+
+      <div class="card" style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); overflow-x: auto; border: 1px solid #e2e8f0; padding: 0;">
+        <table class="table" id="purchases-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead style="background: #f1f5f9; color: #475569; font-size: 0.85rem; text-transform: uppercase;">
+            <tr>
+              <th style="padding: 15px;">ID</th>
+              <th style="padding: 15px;">Proveedor</th>
+              <th class="money-col" style="padding: 15px;">Monto Total</th>
+              <th style="padding: 15px; text-align: center;">Condición</th>
+              <th style="padding: 15px;">Vencimiento</th>
+              <th style="padding: 15px; text-align: center;">Estado</th>
+              <th style="padding: 15px; text-align: center;">Inventario</th>
+              <th style="padding: 15px; text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody style="color: #334155; font-size: 0.9rem;"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="purchase-modal">
+  <div class="modal-content" style="max-width: 850px; border-radius: 16px; background: #f8fafc; padding: 0; overflow: hidden;">
+    <div style="background: white; padding: 20px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+      <h2 id="modal-title" style="margin: 0; color: #1e293b; font-weight: 800;"><i class="bi bi-receipt"></i> Nueva Compra</h2>
+      <button type="button" id="btn-close-modal" style="background:none; border:none; font-size:1.5rem; color:#94a3b8; cursor:pointer;"><i class="bi bi-x"></i></button>
+    </div>
+
+    <form id="purchase-form" style="padding: 25px; overflow-y: auto; max-height: calc(90vh - 80px);">
+      <input type="hidden" id="purchase-id">
+
+      <div class="tasa-tag">
+        <i class="bi bi-info-circle-fill" style="color: #10b981;"></i>
+        <div style="display: flex; gap: 15px; align-items: center; flex: 1;">
+            <div class="form-group" style="flex: 0.5;">
+                <label style="font-size: 0.65rem;">MONEDA FACTURA</label>
+                <select id="purchase-currency" style="padding: 5px; font-size: 0.8rem; height: 32px;">
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label style="font-size: 0.65rem;">TASA BCV APLICADA</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="number" id="purchase-exchange-rate" step="0.01" style="height: 32px; font-weight: 800; color: #166534;">
+                    <span style="font-size: 0.8rem; font-weight: bold; color: #64748b;">Bs.</span>
+                </div>
+            </div>
+            <div style="flex: 2; text-align: right; color: #64748b; font-size: 0.8rem;">
+                La tasa se carga automáticamente, pero puedes ajustarla si es necesario.
+            </div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 0.95rem; color: #475569; margin-top: 0; margin-bottom: 15px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">1. Datos de la Factura</h3>
+      <div class="form-grid">
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Proveedor *</label>
+          <select id="purchase-supplier" required></select>
+        </div>
+        <div class="form-group">
+          <label>Condición de Pago *</label>
+          <select id="purchase-condition" required>
+            <option value="">Selecciona...</option>
+            <option value="CONTADO">Contado</option>
+            <option value="CREDITO">Crédito</option>
+          </select>
+        </div>
+        <div class="form-group hidden" id="due-date-wrap">
+          <label>Fecha Límite de Pago *</label>
+          <input type="date" id="purchase-due-date">
+        </div>
+        <div class="form-group">
+          <label>Fecha de Emisión *</label>
+          <input type="date" id="purchase-date" required>
+        </div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Nro. de Factura o Referencia Interna</label>
+          <input type="text" id="purchase-notes" placeholder="Ej: Factura 001245, Guía 005...">
+        </div>
+      </div>
+
+      <h3 style="font-size: 0.95rem; color: #475569; margin-top: 15px; margin-bottom: 15px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">2. Carga de Artículos</h3>
+      <div class="item-adder">
+        <div class="form-group" style="flex: 1; min-width: 120px;">
+          <label>Clasificación</label>
+          <select id="item-type">
+            <option value="SUPPLY">Materia Prima / Insumo</option>
+            <option value="PRODUCT">Producto Terminado</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex: 2; min-width: 200px;">
+          <label>Artículo</label>
+          <select id="item-target"><option value="">Selecciona...</option></select>
+        </div>
+        <div class="form-group" style="flex: 0.8; min-width: 80px;">
+          <label>Cant. <span id="item-unit-badge" style="color: #10b981; font-weight: 800; font-size: 0.7rem;"></span></label>
+          <input type="number" id="item-qty" step="0.01" min="0" placeholder="0">
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 100px;">
+          <label>Costo Unit. ($)</label>
+          <input type="number" id="item-unit-cost" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 100px;">
+          <label>Total Item ($)</label>
+          <input type="number" id="item-subtotal" step="0.01" min="0" placeholder="0.00" style="background: #f0fdf4; border-color: #bbf7d0; color: #166534; font-weight: bold;">
+        </div>
+        <button type="button" id="btn-add-item" class="btn-primary" style="height: 40px; font-weight: bold; border-radius: 8px;"><i class="bi bi-plus"></i></button>
+      </div>
+
+      <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 25px;">
+        <table class="invoice-table" id="items-table" style="margin: 0;">
+          <thead>
+            <tr>
+              <th style="width: 100px;">Tipo</th>
+              <th>Artículo</th>
+              <th style="text-align: center;">Cant.</th>
+              <th class="money-col">Costo Unit.</th>
+              <th class="money-col">Subtotal</th>
+              <th style="width: 50px;"></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot style="background: #f8fafc;">
+            <tr>
+              <td colspan="4" style="text-align:right; color:#475569; font-weight: bold; padding: 20px;">TOTAL FACTURA:</td>
+              <td class="money-col" style="padding: 20px;">
+                  <div id="purchase-total-view" style="font-size: 1.4rem; color:#1e293b; font-weight: 900;">$ 0.00</div>
+                  <div id="purchase-total-bs-view" style="font-size: 0.9rem; color:#10b981; font-weight: 700; margin-top: 4px;">0.00 Bs.</div>
+              </td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="modal-actions" style="border-top: 1px solid #e2e8f0; padding-top: 20px; justify-content: flex-end;">
+        <button type="button" id="btn-cancel" class="btn-secondary" style="border-radius: 8px;">Cerrar</button>
+        <button type="submit" id="btn-save" class="btn-primary" style="border-radius: 8px;"><i class="bi bi-save"></i> Guardar Borrador</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal hidden" id="pay-modal">
+  <div class="modal-content" style="max-width: 600px; border-radius: 16px;">
+    <div style="background: white; padding: 20px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0; color: #1e293b; font-weight: 800;"><i class="bi bi-cash-stack" style="color:#0284c7;"></i> Liquidar Compra</h2>
+        <div id="pay-total-pending" style="background: #0284c7; color: white; padding: 6px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: 800; box-shadow: 0 4px 6px rgba(2, 132, 199, 0.2);">
+          $ 0.00
+        </div>
+    </div>
+
+    <div style="padding: 25px;">
+        <div style="background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e40af; padding: 15px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+          <i class="bi bi-info-circle-fill" style="font-size: 1.2rem;"></i>
+          <span>Al confirmar, se procesarán los movimientos bancarios y se actualizará el stock automáticamente.</span>
+        </div>
+
+        <form id="pay-form">
+          <input type="hidden" id="pay-purchase-id" />
+
+          <div id="pay-lines-container"></div>
+
+          <button type="button" id="btn-add-pay-line">
+            <i class="bi bi-plus-circle-dotted"></i> Agregar otro método de pago
+          </button>
+
+          <div class="form-group" style="margin-bottom: 5px;">
+            <label>Fecha de Transacción *</label>
+            <input type="date" id="pay-date" required style="background: white; border: 1px solid #cbd5e1;" />
+          </div>
+
+          <div class="modal-actions" style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px; justify-content: flex-end; gap: 12px;">
+            <button type="button" class="btn-secondary" id="pay-cancel" style="border-radius: 8px; padding: 10px 20px;">Cancelar</button>
+            <button type="submit" class="btn-primary" style="border-radius: 8px; background: #0284c7; border: none; padding: 10px 25px; font-weight: 800;">
+                <i class="bi bi-shield-check"></i> Confirmar y Pagar
+            </button>
+          </div>
+        </form>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/compras.js"></script>
+
+</body>
+</html>

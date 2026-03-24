@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facturación | Agromedic Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&family=Inter:wght@400;700;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+    .font-ticket { font-family: 'Courier Prime', monospace; }
+    .font-invoice { font-family: 'Inter', sans-serif; }
+    .font-contract { font-family: 'Playfair Display', serif; }
+
+    #preview-window {
+        overflow-x: auto; /* Permite scroll si es muy grande */
+        perspective: 1000px;
+        background-color: #f8fafc;
+        background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+        background-size: 20px 20px;
+        min-height: 850px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 20px;
+    }
+
+    #printable-area {
+        transform-origin: top center;
+        background: white;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        zoom: 0.85;
+    }
+
+    @media print {
+        @page { margin: 0; size: auto; }
+        body { margin: 0 !important; padding: 0 !important; }
+        body * { visibility: hidden !important; }
+        #printable-area, #printable-area * { visibility: visible !important; }
+        #printable-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 1cm !important; 
+            box-shadow: none !important;
+            border: none !important;
+            zoom: 1 !important;
+            transform: none !important;
+        }
+    }
+
+    .format-btn.active {
+        border-color: #3b82f6;
+        background-color: #eff6ff;
+    }
+</style>
+</head>
+<body class="bg-slate-50 font-invoice">
+
+    <main class="max-w-7xl mx-auto p-6 no-print">
+        
+        <div class="mb-8">
+            <a href="pedidos.html" class="inline-flex items-center gap-2 text-slate-500 hover:text-blue-600 font-bold transition-colors mb-4 text-sm uppercase tracking-wider">
+                <i class="bi bi-arrow-left-circle-fill text-xl"></i>
+                Volver a Pedidos
+            </a>
+            
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h1 class="text-4xl font-black text-slate-800 tracking-tighter">🖨️ Centro de Facturación</h1>
+                    <p class="text-slate-500">Genera documentos legales, notas de entrega y certificados de garantía.</p>
+                </div>
+                
+                <div id="action-buttons" class="hidden flex flex-wrap gap-3">
+                    <button id="btn-whatsapp" onclick="enviarPorWhatsApp()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-2xl font-black shadow-xl shadow-green-200 transition-all flex items-center gap-3 hover:scale-105 active:scale-95">
+                        <i class="bi bi-whatsapp text-xl"></i> WHATSAPP
+                    </button>
+
+                    <button id="btn-print" onclick="ejecutarImpresion()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-4 rounded-2xl font-black shadow-xl shadow-emerald-200 transition-all flex items-center gap-3 hover:scale-105 active:scale-95">
+                        <i class="bi bi-printer-fill text-xl"></i> IMPRIMIR
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <div class="lg:col-span-4 space-y-6">
+                
+                <section class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 italic">Identificador del Pedido</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="search-id" placeholder="Ej: 105" 
+                            class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold text-slate-700 text-lg">
+                        <button onclick="buscarPedidoParaFacturar()" class="bg-slate-900 text-white px-6 rounded-2xl hover:bg-blue-600 transition-all shadow-lg active:scale-90">
+                            <i class="bi bi-search text-xl"></i>
+                        </button>
+                    </div>
+                    <p id="feedback-busqueda" class="text-[10px] mt-2 font-bold uppercase hidden"></p>
+                </section>
+
+                <section id="format-selection" class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm opacity-50 pointer-events-none transition-all duration-500">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 italic">Elige el Tipo de Documento</label>
+                    <div class="grid grid-cols-1 gap-3">
+                        
+                        <button onclick="cambiarFormato('ticket')" class="format-btn p-5 rounded-2xl flex items-center gap-5 text-left border border-transparent">
+                            <div class="bg-slate-100 w-14 h-14 rounded-xl flex items-center justify-center text-3xl">🎫</div>
+                            <div>
+                                <p class="font-black text-slate-800 leading-none mb-1">Recibo Térmico</p>
+                                <p class="text-[11px] text-slate-400 font-bold uppercase">Formato 80mm</p>
+                            </div>
+                        </button>
+                        
+                        <button onclick="cambiarFormato('invoice')" class="format-btn p-5 rounded-2xl flex items-center gap-5 text-left border border-transparent">
+                            <div class="bg-blue-50 w-14 h-14 rounded-xl flex items-center justify-center text-3xl">📄</div>
+                            <div>
+                                <p class="font-black text-slate-800 leading-none mb-1">Nota de Entrega</p>
+                                <p class="text-[11px] text-blue-400 font-bold uppercase italic">Papel A4 / Carta</p>
+                            </div>
+                        </button>
+
+                        <button onclick="cambiarFormato('garantia-tlf')" class="format-btn p-5 rounded-2xl flex items-center gap-5 text-left border border-transparent">
+                            <div class="bg-red-50 w-14 h-14 rounded-xl flex items-center justify-center text-3xl text-red-600">🍎</div>
+                            <div>
+                                <p class="font-black text-slate-800 leading-none mb-1">Garantía de Teléfono</p>
+                                <p class="text-[11px] text-red-400 font-bold uppercase">Checklist + IMEI</p>
+                            </div>
+                        </button>
+
+                        <button onclick="cambiarFormato('contract')" class="format-btn p-5 rounded-2xl flex items-center gap-5 text-left border border-transparent">
+                            <div class="bg-slate-900 w-14 h-14 rounded-xl flex items-center justify-center text-3xl text-white">⚖️</div>
+                            <div>
+                                <p class="font-black text-slate-800 leading-none mb-1">Contrato Legal</p>
+                                <p class="text-[11px] text-slate-400 font-bold uppercase italic">Compra-Venta</p>
+                            </div>
+                        </button>
+                    </div>
+                </section>
+
+                <div class="p-6 bg-blue-600 rounded-3xl text-white shadow-lg shadow-blue-200">
+                    <p class="text-xs font-bold uppercase tracking-widest mb-2 opacity-80">Tip Profesional</p>
+                    <p class="text-sm font-medium leading-relaxed italic">"Puedes enviar la garantía directo al WhatsApp del cliente sin imprimir papel."</p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden relative">
+                <div id="preview-window">
+                    <div id="empty-state" class="text-center py-32 animate-pulse">
+                        <div class="bg-slate-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="bi bi-file-earmark-pdf text-5xl text-slate-300"></i>
+                        </div>
+                        <p class="font-black uppercase tracking-[0.3em] text-slate-300 text-xs">Esperando Pedido...</p>
+                    </div>
+
+                    <div id="printable-area" class="hidden overflow-auto max-w-full"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/main.js"></script>
+    <script src="../assets/js/facturacion.js"></script>
+</body>
+</html>

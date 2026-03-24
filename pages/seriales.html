@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Serial Hub | Kont Admin</title>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+  <style>
+    :root {
+      --primary: #10b981;
+      --primary-soft: #ecfdf5;
+      --accent: #6366f1;
+      --bg: #f8fafc;
+      --card-border: #e2e8f0;
+    }
+
+    /* Contenedor Principal con Glassmorphism suave */
+    .glass-header {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 25px;
+      border: 1px solid var(--card-border);
+    }
+
+    /* Zona de Escaneo Activa */
+    .scan-zone {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scan-zone:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 10px 30px rgba(16, 185, 129, 0.1);
+    }
+
+    .scan-zone::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 4px; height: 100%;
+      background: var(--primary);
+    }
+
+    /* Input Flotante Moderno */
+    .modern-input {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #1e293b;
+      border: none;
+      outline: none;
+      width: 100%;
+      background: transparent;
+    }
+
+    .modern-input::placeholder {
+      font-weight: 400;
+      letter-spacing: 0;
+      color: #94a3b8;
+    }
+
+    /* Badges Animados */
+    .imei-tag {
+      background: var(--primary-soft);
+      color: var(--primary);
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-family: 'Monaco', monospace;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.3s ease-out;
+      border: 1px solid #d1fae5;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Tabla Estilo Dashboard */
+    .master-card {
+      background: white;
+      border-radius: 20px;
+      border: 1px solid var(--card-border);
+      overflow: hidden;
+    }
+
+    .master-table th {
+      background: #f8fafc;
+      padding: 18px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+    }
+
+    .status-badge {
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 0.7rem;
+      font-weight: 800;
+    }
+
+    .status-available { background: #dcfce7; color: #15803d; }
+    .status-sold { background: #f1f5f9; color: #475569; }
+
+    /* Estilo del lector QR */
+    #reader {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 20px;
+      display: none; /* Se activa por JS */
+    }
+
+    @media (max-width: 992px) {
+        /* 1. LAYOUT: De 2 columnas a 1 sola */
+        .page { padding: 15px !important; }
+        
+        div[style*="grid-template-columns"] {
+            grid-template-columns: 1fr !important;
+            gap: 20px !important;
+        }
+
+        /* 2. HEADER: Ajuste de títulos y contador */
+        .glass-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 15px;
+        }
+        
+        .glass-header div[style*="text-align: right"] {
+            text-align: center !important;
+            border-top: 1px solid var(--card-border);
+            padding-top: 15px;
+            width: 100%;
+        }
+
+        /* 3. ZONA DE ESCANEO: Inputs más grandes */
+        .scan-zone { padding: 20px; }
+        
+        .modern-input {
+            font-size: 1.2rem; /* Un poco más pequeño para que no rompa en pantallas angostas */
+            letter-spacing: 1px;
+        }
+
+        #reg-item-id {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        /* 4. TRANSFORMACIÓN DE LA TABLA MAESTRA A TARJETAS */
+        .master-table thead { display: none; }
+        
+        .master-table tbody tr {
+            display: block;
+            padding: 15px;
+            border-bottom: 8px solid #f1f5f9; /* Separador grueso entre equipos */
+            position: relative;
+        }
+
+        .master-table td {
+            display: block;
+            padding: 5px 0 !important;
+            width: 100%;
+        }
+
+        /* El IMEI/Serial como título de la tarjeta */
+        .master-table td:nth-child(1) {
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+        /* El Estado (Badge) arriba a la derecha */
+        .master-table td:nth-child(4) {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: auto;
+        }
+
+        /* 5. MODAL DE FEEDBACK (Botón Full Width) */
+        .glass-card {
+            width: 95%;
+            padding: 25px;
+        }
+        
+        #btn-save-serials {
+            width: 100%;
+            padding: 18px;
+        }
+    }
+
+  </style>
+</head>
+<body style="background: var(--bg);">
+
+<div class="layout">
+  <div id="sidebar"></div>
+  <div class="content">
+    <div id="header"></div>
+
+    <div class="page" style="padding: 30px;">
+      
+      <div class="glass-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h1 style="margin: 0; font-size: 1.8rem; font-weight: 900; color: #0f172a;">Serial Hub</h1>
+          <p style="color: #64748b; margin: 5px 0 0;">Identificación única de inventario de telefonía.</p>
+        </div>
+        <div style="text-align: right;">
+          <span id="global-counter" style="font-size: 2rem; font-weight: 900; color: var(--primary);">0</span>
+          <p style="margin: 0; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Equipos Disponibles</p>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 350px; gap: 30px;">
+        
+        <div class="left-col">
+          
+          <div class="scan-zone">
+            <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 800; color: #1e293b; font-size: 0.9rem;">PASO 1: SELECCIONA EL EQUIPO</span>
+              <select id="reg-item-id" style="border: 1px solid #e2e8f0; padding: 8px 15px; border-radius: 10px; font-weight: 600;">
+                <option value="">Buscar en Inventario...</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 800; color: #1e293b; font-size: 0.9rem;">PASO 2: ESCANEA IMEIS</span>
+              
+              <button id="btn-toggle-scanner" style="border: 1px solid #e2e8f0; background: #f8fafc; padding: 5px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; color: #64748b; cursor: pointer;">
+                <i class="bi bi-camera"></i> ACTIVAR CÁMARA
+              </button>
+            </div>
+
+            <div id="reader"></div>
+            
+            <div style="display: flex; align-items: center; gap: 20px;">
+              <div style="background: var(--primary-soft); width: 60px; height: 60px; border-radius: 15px; display: flex; align-items: center; justify-content: center;">
+                <i class="bi bi-upc-scan" style="font-size: 1.8rem; color: var(--primary);"></i>
+              </div>
+              <input type="text" id="reg-serial-input" class="modern-input" placeholder="XXXXXXXXXXXXXXX" autofocus>
+            </div>
+
+            <div id="temp-serial-list" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 25px;">
+              </div>
+
+            <div style="margin-top: 30px; display: flex; justify-content: flex-end;">
+              <button id="btn-save-serials" class="btn-primary" style="display: none; padding: 15px 35px; border-radius: 12px; font-weight: 800; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);">
+                Confirmar Ingreso al Sistema
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="right-col">
+          <div class="master-card" style="padding: 20px;">
+            <h3 style="margin: 0 0 20px; font-size: 1rem;">Recién Ingresados</h3>
+            <div id="recent-serials-list">
+               </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="master-card" style="margin-top: 40px;">
+        <div style="padding: 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+           <h2 style="margin:0; font-size: 1.1rem; font-weight: 800;">Trazabilidad de Seriales</h2>
+           <div class="search-box" style="max-width: 300px; background: #f8fafc;">
+             <i class="bi bi-search"></i>
+             <input type="text" id="search-serial" placeholder="Filtrar base de datos...">
+           </div>
+        </div>
+        <table class="table master-table" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th>Serial / IMEI</th>
+              <th>Modelo / Referencia</th>
+              <th>Ubicación Stock</th>
+              <th>Estado Actual</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="serial-master-table">
+            </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="feedback-modal" class="modal-overlay hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+  <div class="glass-card" style="background: white; padding: 40px; border-radius: 24px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,0.1); border: 1px solid var(--card-border);">
+    <div style="background: var(--primary-soft); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+      <i class="bi bi-check-lg" style="font-size: 2.5rem; color: var(--primary);"></i>
+    </div>
+    <h2 style="font-weight: 900; color: #0f172a; margin-bottom: 10px;">¡Ingreso Exitoso!</h2>
+    <p id="feedback-message" style="color: #64748b; line-height: 1.6; margin-bottom: 25px;">Los seriales han sido vinculados correctamente al inventario.</p>
+    <button id="close-feedback" class="btn-primary" style="width: 100%; padding: 15px; border-radius: 12px; font-weight: 800; border: none; background: var(--primary); color: white; cursor: pointer;">Entendido</button>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/seriales_manager.js"></script>
+
+</body>
+</html>
