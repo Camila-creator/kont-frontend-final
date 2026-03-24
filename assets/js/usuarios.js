@@ -1,6 +1,6 @@
 // frontend/assets/js/usuarios.js
 
-const API_USERS = "http://localhost:4000/api/users";
+const API_USERS = "http://https://kont-backend-final.onrender.com/api/users";
 
 // ---------------- ELEMENTOS ----------------
 const tableBody = document.querySelector("#users-table tbody");

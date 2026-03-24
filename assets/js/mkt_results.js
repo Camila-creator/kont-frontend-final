@@ -2,7 +2,7 @@
    DASHBOARD DE RESULTADOS Y ROI JS (Conectado a PostgreSQL)
    ========================================================= */
 
-const API_RESULTS = 'http://localhost:4000/api/mkt-results';
+const API_RESULTS = 'http://https://kont-backend-final.onrender.com/api/mkt-results';
 
 let chartFinanzasInstance = null;
 let chartDistribucionInstance = null;

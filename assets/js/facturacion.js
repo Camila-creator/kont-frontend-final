@@ -11,7 +11,7 @@ async function buscarPedidoParaFacturar() {
     if (!orderId) return;
 
     try {
-        const response = await fetch(`http://localhost:4000/api/orders/${orderId}`, {
+        const response = await fetch(`http://https://kont-backend-final.onrender.com/api/orders/${orderId}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,

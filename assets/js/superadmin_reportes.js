@@ -1,6 +1,6 @@
 // frontend/assets/js/reportes_uso.js
 
-const API_USAGE = "http://localhost:4000/api/reportes-globales/usage";
+const API_USAGE = "http://https://kont-backend-final.onrender.com/api/reportes-globales/usage";
 const tbody = document.querySelector("#usage-table tbody");
 
 document.addEventListener("DOMContentLoaded", () => {

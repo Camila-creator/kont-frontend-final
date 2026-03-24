@@ -2,7 +2,8 @@
    DASHBOARD PRINCIPAL (HOME) JS - VERSION MEJORADA
    ========================================================= */
 
-const API_MAIN_DASHBOARD = "http://localhost:4000/api/dashboard-main";
+const API_MAIN_DASHBOARD = "https://kont-backend-final.onrender.com/api/dashboard-main";
+
 let chartInstance = null;
 
 document.addEventListener("DOMContentLoaded", () => {

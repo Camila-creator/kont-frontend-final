@@ -17,7 +17,7 @@ async function fetchAuditLogs() {
     const tbody = document.querySelector("#audit-table tbody");
     
     try {
-        const backendURL = 'http://localhost:4000/api/audit';
+        const backendURL = 'http://https://kont-backend-final.onrender.com/api/audit';
         
         const response = await fetch(backendURL, {
             method: 'GET',

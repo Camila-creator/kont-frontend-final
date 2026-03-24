@@ -6,7 +6,7 @@
 // =========================================================
 // 0. CONFIGURACIÓN GLOBAL Y ESTADO
 // =========================================================
-const API_BASE = "http://localhost:4000/api";
+const API_BASE = "http://https://kont-backend-final.onrender.com/api";
 const VERTICALS_WITH_SERIALS = [1, 2]; // 1: Teléfonos, 2: Tecnología
 
 // =========================================================

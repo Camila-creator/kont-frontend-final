@@ -1,7 +1,7 @@
 /* =========================================================
    DASHBOARD FINANCIERO JS (CFO LEVEL) - CONECTADO A BD REAL
    ========================================================= */
-const API_FINANCE = "http://localhost:4000/api/finance/dashboard";
+const API_FINANCE = "http://https://kont-backend-final.onrender.com/api/finance/dashboard";
 let chartMethodsInstance = null;
 
 document.addEventListener("DOMContentLoaded", () => { loadFinanceDashboard(); });

@@ -1,4 +1,4 @@
-const API_TENANTS = "http://localhost:4000/api/tenants";
+const API_TENANTS = "http://https://kont-backend-final.onrender.com/api/tenants";
 
 // ---------------- ELEMENTOS DEL DOM ----------------
 const tableBody = document.querySelector("#tenants-table tbody");
