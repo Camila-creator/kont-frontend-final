@@ -2,7 +2,7 @@
    INFLUENCERS & EMBAJADORES JS - Conectado a PostgreSQL
    ========================================================= */
 
-const API_INFLUENCERS = 'http://https://kont-backend-final.onrender.com/api/mkt-influencers';
+const API_INFLUENCERS = 'https://kont-backend-final.onrender.com/api/mkt-influencers';
 let dbInfluencers = [];
 
 document.addEventListener('DOMContentLoaded', () => { loadInfluencers(); });

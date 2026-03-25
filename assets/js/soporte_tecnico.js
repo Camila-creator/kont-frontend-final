@@ -1,6 +1,6 @@
 // frontend/assets/js/soporte_tecnico.js
 
-const API_SOPORTE = "http://https://kont-backend-final.onrender.com/api/soporte-global";
+const API_SOPORTE = "https://kont-backend-final.onrender.com/api/soporte-global";
 const filterSelect = document.getElementById("filter-status");
 
 // Modal Elements

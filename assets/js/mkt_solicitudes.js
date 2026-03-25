@@ -2,8 +2,8 @@
    SOLICITUDES Y TAREAS (KANBAN) JS - Conectado a PostgreSQL
    ========================================================= */
 
-const API_TASKS = 'http://https://kont-backend-final.onrender.com/api/mkt-tasks';
-const API_ROLES = 'http://https://kont-backend-final.onrender.com/api/mkt-tasks/roles';
+const API_TASKS = 'https://kont-backend-final.onrender.com/api/mkt-tasks';
+const API_ROLES = 'https://kont-backend-final.onrender.com/api/mkt-tasks/roles';
 
 let dbRoles = [];
 let dbTasks = [];

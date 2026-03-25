@@ -1,6 +1,6 @@
 // frontend/assets/js/contactar_soporte.js
 
-const API_MY_TICKETS = "http://https://kont-backend-final.onrender.com/api/support-tickets";
+const API_MY_TICKETS = "https://kont-backend-final.onrender.com/api/support-tickets";
 const tbody = document.querySelector("#my-tickets-table tbody");
 const form = document.getElementById("ticket-form");
 

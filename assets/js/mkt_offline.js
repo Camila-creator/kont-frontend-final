@@ -2,7 +2,7 @@
    PUBLICIDAD OFFLINE & BTL JS - Conectado a PostgreSQL
    ========================================================= */
 
-const API_OFFLINE = 'http://https://kont-backend-final.onrender.com/api/mkt-offline/activities';
+const API_OFFLINE = 'https://kont-backend-final.onrender.com/api/mkt-offline/activities';
 let dbOffline = [];
 
 document.addEventListener('DOMContentLoaded', () => { loadOfflineAds(); });

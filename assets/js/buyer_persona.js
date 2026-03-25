@@ -1,7 +1,7 @@
 /* =========================================================
    BUYER PERSONA JS - Conectado al Backend SaaS
    ========================================================= */
-const API_URL = 'http://https://kont-backend-final.onrender.com/api/buyer-personas';
+const API_URL = 'https://kont-backend-final.onrender.com/api/buyer-personas';
 let currentPersonas = []; let charts = [];
 
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") loadPersonas(); });

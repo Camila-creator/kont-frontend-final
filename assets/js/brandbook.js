@@ -1,7 +1,7 @@
 /* =========================================================
    BRANDBOOK.JS - Lógica de Frontend (Versión Genérica SaaS)
    ========================================================= */
-const API_URL = 'http://https://kont-backend-final.onrender.com/api/brand-assets'; 
+const API_URL = 'https://kont-backend-final.onrender.com/api/brand-assets'; 
 let assetMap = {}; 
 
 document.addEventListener('DOMContentLoaded', () => { loadBrandBook(); });

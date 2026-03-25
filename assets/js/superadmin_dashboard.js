@@ -1,6 +1,6 @@
 // frontend/assets/js/superadmin_dashboard.js
 
-const API_DASHBOARD_SA = "http://https://kont-backend-final.onrender.com/api/sa-dashboard/metrics";
+const API_DASHBOARD_SA = "https://kont-backend-final.onrender.com/api/sa-dashboard/metrics";
 
 document.addEventListener("DOMContentLoaded", () => {
     loadSuperAdminDashboard();

@@ -1,6 +1,6 @@
-const API_CAMPAIGNS = 'http://https://kont-backend-final.onrender.com/api/mkt-ads/campaigns';
-const API_AUDIENCES = 'http://https://kont-backend-final.onrender.com/api/mkt-ads/audiences';
-const API_CALENDAR = 'http://https://kont-backend-final.onrender.com/api/mkt-calendar/posts';
+const API_CAMPAIGNS = 'https://kont-backend-final.onrender.com/api/mkt-ads/campaigns';
+const API_AUDIENCES = 'https://kont-backend-final.onrender.com/api/mkt-ads/audiences';
+const API_CALENDAR = 'https://kont-backend-final.onrender.com/api/mkt-calendar/posts';
 
 let currentDate = new Date(); let dbAds = []; let savedAudiences = []; let calendarPosts = [];
 
