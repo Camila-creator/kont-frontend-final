@@ -104,6 +104,98 @@
         content: none !important;
 }
 }
+
+/* =========================================================
+   MEDIA QUERY PARA TELÉFONO (SOPORTE KONT)
+   ========================================================= */
+@media (max-width: 768px) {
+    /* 1. Layout: Formulario arriba, Tabla abajo */
+    .support-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px !important;
+    }
+
+    /* 2. Formulario: Ajuste de Inputs para Pulgar */
+    .form-group input, 
+    .form-group select, 
+    .form-group textarea {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        font-size: 16px !important; /* Evita zoom molesto en iPhone */
+        padding: 14px !important;
+    }
+
+    /* 3. Tabla: Convertir en Tarjetas */
+    .ticket-table thead { display: none !important; }
+    
+    .ticket-table, .ticket-table tbody, .ticket-table tr, .ticket-table td {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .ticket-table tr {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        margin-bottom: 15px;
+        padding: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    }
+
+    .ticket-table td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 10px 0 !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+    }
+
+    .ticket-table td:last-child { border-bottom: none !important; }
+
+    /* Etiquetas de la izquierda en las tarjetas */
+    .ticket-table td::before {
+        content: attr(data-label);
+        font-weight: 800;
+        color: #94a3b8;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+    }
+
+    /* 4. MODAL: Centrado y con Scroll Interno */
+    .modal-content {
+        width: 92% !important;
+        max-width: 92% !important;
+        max-height: 85vh !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        border-radius: 24px !important;
+    }
+
+    /* Título y Botones fijos para que no se corten */
+    #modal-title {
+        flex-shrink: 0 !important;
+        padding: 20px !important;
+        background: white !important;
+    }
+
+    .modal-actions {
+        flex-shrink: 0 !important;
+        flex-direction: column-reverse !important;
+        padding: 15px 20px !important;
+        gap: 10px !important;
+        background: #f8fafc !important;
+    }
+
+    .modal-actions button {
+        width: 100% !important;
+        height: 50px !important;
+        margin: 0 !important;
+        border-radius: 12px !important;
+    }
+}
   </style>
 </head>
 <body>
