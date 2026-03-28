@@ -228,15 +228,28 @@ function showSuccess(count) {
     const msg = document.getElementById('feedback-message');
     const btn = document.getElementById('close-feedback');
 
-    msg.innerHTML = `Se han vinculado <b>${count}</b> unidades de forma exitosa al inventario de <b>Kont</b>.`;
-    modal.classList.remove('hidden');
+    // 1. Actualizar el mensaje con la cantidad
+    if (msg) {
+        msg.innerHTML = `Se han vinculado <b>${count}</b> unidades de forma exitosa al inventario de <b>Kont</b>.`;
+    }
 
+    // 2. Mostrar el modal (ahora la clase .hidden sí funcionará)
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+
+    // 3. Lógica del botón de cierre
     btn.onclick = () => {
         modal.classList.add('hidden');
-        if(inputScan) inputScan.focus();
+        
+        // Devolver el foco al input de escaneo para seguir trabajando
+        const inputScan = document.getElementById('reg-serial-input');
+        if (inputScan) {
+            inputScan.value = "";
+            inputScan.focus();
+        }
     };
 }
-
 // =========================================================
 // 7. TABLA MAESTRA Y FILTROS
 // =========================================================
