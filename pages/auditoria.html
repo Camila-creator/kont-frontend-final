@@ -104,6 +104,79 @@
 }
 }
 
+/* --- OPTIMIZACIÓN FINAL PARA MÓVIL (AUDITORÍA) --- */
+@media (max-width: 768px) {
+    /* 1. Ajuste del Header y Top Bar */
+    .page { padding: 15px !important; }
+    
+    .page-header h1 { font-size: 1.5rem !important; }
+    
+    .top-bar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 12px !important;
+        gap: 10px !important;
+    }
+
+    .search-box {
+        min-width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Contenedor de Fecha y Exportar */
+    .top-bar > div:last-child {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        width: 100%;
+    }
+
+    #audit-date, #btn-export-csv {
+        width: 100% !important;
+        margin: 0 !important;
+        justify-content: center;
+    }
+
+    /* 2. Filtros Rápidos con Scroll Horizontal */
+    .audit-filters {
+        overflow-x: auto;
+        padding-bottom: 10px;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap; /* Evita que los filtros salten de línea */
+        gap: 8px;
+    }
+
+    .filter-item {
+        flex-shrink: 0;
+        padding: 6px 15px;
+    }
+
+    /* 3. Ajustes en las Tarjetas de Log */
+    .log-table tr {
+        margin-bottom: 12px;
+        border-color: #f1f5f9;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .log-table td {
+        padding: 6px 0 !important;
+        font-size: 0.85rem;
+    }
+
+    /* Estilo para el Usuario en móvil */
+    .user-pill {
+        font-size: 0.9rem;
+    }
+
+    /* Ajuste de la IP */
+    .ip-text {
+        font-size: 0.75rem;
+        background: #f1f5f9;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+}
+
   </style>
 </head>
 <body>
