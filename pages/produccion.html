@@ -90,10 +90,18 @@
         gap: 15px;
     }
 
-    .panel {
-        width: 100% !important;
-        box-sizing: border-box; /* Fundamental para que el padding no la estire */
+    .two-cols {
+        display: flex !important; /* Cambiamos grid por flex */
+        flex-direction: column !important; /* Uno arriba del otro */
+        gap: 10px;
+        width: 100%;
     }
+    
+    .panel {
+        overflow: hidden; /* Corta cualquier desborde accidental */
+        padding: 15px !important;
+    }
+}
 
     /* 5. FIX PARA TABLAS QUE EMPUJAN */
     .consumption-box {
