@@ -148,6 +148,79 @@
         color: white;
         border-color: #10b981;
     }
+
+    /* --- OPTIMIZACIÓN DE MODALES (TESORERÍA/BANCOS) --- */
+    .modal {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 10px;
+    }
+
+    .modal-content {
+        width: 95% !important;
+        max-width: 95% !important;
+        max-height: 85vh !important; /* Mantiene el modal dentro del área visible */
+        display: flex !important;
+        flex-direction: column !important;
+        border-radius: 20px !important;
+        padding: 0 !important; /* Quitamos padding para el sándwich */
+        overflow: hidden !important;
+    }
+
+    /* Título Fijo */
+    .modal-content h2, #modal-title {
+        padding: 20px !important;
+        margin: 0 !important;
+        font-size: 1.2rem !important;
+        border-bottom: 1px solid #f1f5f9;
+        flex-shrink: 0 !important;
+        background: white;
+    }
+
+    /* Cuerpo con Scroll (Donde está el form-grid) */
+    .modal-body, #bank-form, #account-form {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        padding: 20px !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Rejilla a una columna */
+    .form-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+
+    .full-width {
+        grid-column: auto !important; /* Anula el span 2 de escritorio */
+    }
+
+    /* Botones Fijos Abajo */
+    .modal-actions {
+        padding: 15px 20px !important;
+        background: #f8fafc !important;
+        border-top: 1px solid #e2e8f0 !important;
+        display: flex !important;
+        flex-direction: column-reverse !important;
+        gap: 10px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .modal-actions button {
+        width: 100% !important;
+        height: 50px !important;
+        margin: 0 !important;
+        font-size: 1rem !important;
+        border-radius: 12px !important;
+    }
+
+    /* Inputs más grandes para evitar el zoom de iOS */
+    .form-group input, .form-group select {
+        height: 45px !important;
+        font-size: 16px !important;
+    }
 }
   </style>
 </head>
