@@ -55,24 +55,14 @@
         border-bottom: 1px solid #f1f5f9;
     }
 
-    /* EL MODAL: Estructura corregida */
-    .modal-content {
-        width: 95% !important;
-        max-width: 95% !important;
-        max-height: 90vh !important;
-        display: flex !important;
-        flex-direction: column !important;
-        padding: 0 !important;
-        border-radius: 20px !important;
-        overflow: hidden;
-    }
 
-    /* Área de Scroll Interno */
-    #payment-form {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        overflow: hidden;
+    /* 3. EL FORMULARIO: El único que puede hacer scroll */
+    #payment-form, .modal-body {
+        flex: 1 !important;
+        overflow-y: auto !important; /* Aquí es donde ocurre la magia del scroll */
+        padding: 20px !important;
+        background: #ffffff !important;
+        -webkit-overflow-scrolling: touch; /* Scroll suave en iPhone */
     }
 
     .form-scroll-area {
@@ -82,55 +72,54 @@
         -webkit-overflow-scrolling: touch;
     }
 
-    /* Forzamos que la cuadrícula se vea bien en móvil */
+    /* 4. LA CUADRÍCULA: Una sola columna para que no se amontone */
     .form-grid {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 12px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px !important;
     }
 
-    /* BOTONES: Grandes, iguales y con espacio */
+    /* 5. LOS BOTONES: Siempre visibles abajo */
     .modal-actions {
         background: #f8fafc !important;
-        padding: 20px !important;
+        padding: 15px 20px !important;
         display: flex !important;
-        flex-direction: column-reverse !important; /* Confirmar arriba, Cancelar abajo */
-        gap: 12px !important;
+        flex-direction: column-reverse !important; /* Guardar arriba del pulgar */
+        gap: 10px !important;
         border-top: 1px solid #e2e8f0 !important;
-        margin-top: auto !important;
+        flex-shrink: 0 !important; /* Evita que los botones desaparezcan */
     }
 
     .modal-actions button {
-        width: 100% !important; /* Ambos ocupan todo el ancho */
-        height: 55px !important; /* Altura pro para móvil */
+        width: 100% !important;
+        height: 50px !important;
         margin: 0 !important;
         font-size: 1rem !important;
-        font-weight: 700 !important;
-        border-radius: 12px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        border-radius: 14px !important;
     }
-    /* Ajuste para el Título del Modal */
-    #modal-title {
+    
+    /* 2. EL TÍTULO: Siempre visible arriba */
+    #modal-title, .modal-header {
         padding: 20px !important;
-        margin: 0 !important;
-        font-size: 1.3rem !important; /* Un poco más pequeño para que no se corte */
-        line-height: 1.2 !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 10px !important;
-        flex-shrink: 0 !important; /* IMPORTANTE: Esto evita que se aplaste */
+        font-size: 1.2rem !important;
+        font-weight: 800 !important;
         background: white !important;
-        z-index: 10;
+        border-bottom: 1px solid #f1f5f9 !important;
+        margin: 0 !important;
+        flex-shrink: 0 !important; /* Evita que el título se aplaste */
     }
 
     .modal-content {
-        /* Aseguramos que el contenido no empuje el título hacia afuera */
+        width: 92% !important;
+        max-width: 92% !important;
+        height: auto !important;
+        max-height: 85vh !important; /* Deja un poco de aire arriba y abajo */
         display: flex !important;
         flex-direction: column !important;
-        padding: 0 !important; 
-        overflow: hidden !important;
+        padding: 0 !important;
+        border-radius: 24px !important;
+        overflow: hidden !important; /* Importante para que el scroll sea interno */
+        position: relative;
     }
 }
   </style>
