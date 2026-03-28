@@ -51,83 +51,57 @@
     /* =========================================================
        ADAPTACIÓN PARA MÓVIL (PRODUCCIÓN)
        ========================================================= */
-    @media (max-width: 768px) {
-        /* 1. Ajuste General de Espaciado */
-        .page { padding: 12px !important; }
-        
-        .page-header h1 { font-size: 1.5rem !important; }
-        .page-header p { font-size: 0.85rem; }
-
-        /* 2. Grid a una sola columna */
-        .production-grid { 
-            grid-template-columns: 1fr; 
-            gap: 15px; 
-        }
-
-        .panel { padding: 15px; border-radius: 12px; }
-
-        /* 3. Formulario en móvil */
-        .two-cols { 
-            grid-template-columns: 1fr; /* Apila el selector de producto y cantidad */
-            gap: 10px; 
-        }
-
-        .form-group input, .form-group select {
-            height: 48px; /* Tamaño táctil */
-            font-size: 16px !important; /* Evita zoom molesto en iPhone */
-        }
-
-        /* 4. Tabla de Consumo (Scroll Horizontal) */
-        .consumption-box {
-            overflow-x: auto; /* Permite deslizar si los nombres de insumos son largos */
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .consumption-table th, .consumption-table td {
-            padding: 10px;
-            font-size: 0.85rem;
-            white-space: nowrap; /* Evita que el texto se rompa en mil líneas */
-        }
-
-        /* 5. Historial en Móvil */
-        .history-list {
-            max-height: 400px;
-        }
-
-        .history-item {
-            padding: 12px;
-        }
-
-        .hi-product { font-size: 0.9rem; }
-        .hi-qty { font-size: 1rem; }
-
-        /* 6. Botón de Acción Principal */
-        #btn-run-production {
-            max-width: 100% !important;
-            height: 52px;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); /* Sombra verde esmeralda */
-        }
-
-        /* 7. Ajuste de Modales de Confirmación */
-        .modal-content {
-            width: 95% !important;
-            padding: 20px !important;
-            border-radius: 20px !important;
-        }
-
-        .modal-actions {
-            flex-direction: column-reverse; /* Confirmar arriba de Cancelar */
-            gap: 10px;
-        }
-
-        .modal-actions button {
-            width: 100% !important;
-            height: 48px;
-            margin: 0 !important;
-        }
+ @media (max-width: 768px) {
+    /* 1. ELIMINAR EL SCROLL LATERAL DEL CUERPO */
+    html, body {
+        overflow-x: hidden; /* Corta cualquier cosa que se salga */
+        width: 100%;
+        position: relative;
     }
+
+    /* 2. REAJUSTE DEL LAYOUT GLOBAL */
+    .layout {
+        display: block !important; /* Desactiva el flex/grid del escritorio */
+        width: 100vw;
+        overflow-x: hidden;
+    }
+
+    .content {
+        margin-left: 0 !important; /* Si el sidebar empujaba el contenido, lo quitamos */
+        width: 100% !important;
+        padding: 0 !important;
+        min-width: 0 !important;
+    }
+
+    /* 3. CENTRAR LA PÁGINA */
+    .page {
+        padding: 15px !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        box-sizing: border-box; /* Asegura que el padding no sume ancho */
+    }
+
+    /* 4. ASEGURAR QUE LA GRID NO SE DESBORDE */
+    .production-grid {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        margin: 0;
+        gap: 15px;
+    }
+
+    .panel {
+        width: 100% !important;
+        box-sizing: border-box; /* Fundamental para que el padding no la estire */
+    }
+
+    /* 5. FIX PARA TABLAS QUE EMPUJAN */
+    .consumption-box {
+        width: 100%;
+        overflow-x: auto; /* El scroll solo sucede DENTRO de la tabla, no en toda la pantalla */
+        -webkit-overflow-scrolling: touch;
+    }
+}
   </style>
 </head>
 <body>
