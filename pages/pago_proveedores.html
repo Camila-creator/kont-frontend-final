@@ -114,7 +114,10 @@
 
     /* --- OPTIMIZACIONES MOBILE PARA EGRESOS (PROVEEDORES) --- */
     @media (max-width: 768px) {
-        /* Convertir Tabla de Egresos en Tarjetas */
+        /* 1. Reset de página para evitar baile lateral */
+        .page { padding: 10px !important; }
+
+        /* 2. Convertir Tabla de Egresos en Tarjetas */
         #supp-payments-table thead { display: none; }
         #supp-payments-table tbody tr {
             display: block;
@@ -131,7 +134,6 @@
             align-items: center;
             padding: 10px 0;
             border-bottom: 1px solid #f1f5f9;
-            text-align: right;
         }
         #supp-payments-table td::before { 
           content: attr(data-label);
@@ -140,18 +142,55 @@
           font-size: 0.75rem;
           text-transform: uppercase;
         }
-        #supp-payments-table td:last-child { border-bottom: none; }
 
-        /* Botones móviles para que no se corten */
+        /* 3. EL MODAL: Bloqueo de altura y scroll interno */
+        .modal-content {
+            width: 94% !important;
+            max-width: 94% !important;
+            height: auto !important;
+            max-height: 90vh !important; /* Evita que choque con los bordes del cel */
+            margin: 0 !important;
+            border-radius: 24px !important;
+        }
+
+        #modal-title {
+            padding: 20px !important;
+            font-size: 1.25rem !important; /* Un poco más pequeño para móviles */
+            flex-shrink: 0 !important;
+        }
+
+        .form-scroll-area {
+            padding: 20px !important; /* Menos espacio que en PC para ganar área */
+            flex: 1 !important;
+            overflow-y: auto !important;
+        }
+
+        /* 4. Formulario en una sola columna */
+        .form-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+        }
+
+        .form-group input, .form-group select {
+            height: 48px !important; /* Altura táctil ideal */
+            font-size: 16px !important; /* Evita zoom en iPhone */
+        }
+
+        /* 5. Botones móviles */
         .modal-actions {
             flex-direction: column-reverse !important;
-            padding: 20px !important;
+            padding: 15px 20px !important;
+            gap: 10px !important;
+            flex-shrink: 0 !important;
         }
+
         .modal-actions button {
             width: 100% !important;
-            height: 55px !important;
-            border-radius: 12px !important;
+            height: 52px !important;
+            border-radius: 14px !important;
             margin: 0 !important;
+            font-size: 1rem !important;
         }
     }
   </style>
