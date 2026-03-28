@@ -51,65 +51,70 @@
     /* =========================================================
        ADAPTACIÓN PARA MÓVIL (PRODUCCIÓN)
        ========================================================= */
- @media (max-width: 768px) {
-    /* 1. ELIMINAR EL SCROLL LATERAL DEL CUERPO */
+ /* =========================================================
+   ADAPTACIÓN EXCLUSIVA PARA MÓVIL (No afecta PC)
+   ========================================================= */
+@media (max-width: 768px) {
+    /* 1. Reset de scroll lateral */
     html, body {
-        overflow-x: hidden; /* Corta cualquier cosa que se salga */
-        width: 100%;
-        position: relative;
-    }
-
-    /* 2. REAJUSTE DEL LAYOUT GLOBAL */
-    .layout {
-        display: block !important; /* Desactiva el flex/grid del escritorio */
-        width: 100vw;
         overflow-x: hidden;
-    }
-
-    .content {
-        margin-left: 0 !important; /* Si el sidebar empujaba el contenido, lo quitamos */
-        width: 100% !important;
-        padding: 0 !important;
-        min-width: 0 !important;
-    }
-
-    /* 3. CENTRAR LA PÁGINA */
-    .page {
-        padding: 15px !important;
-        width: 100% !important;
-        margin: 0 auto !important;
-        box-sizing: border-box; /* Asegura que el padding no sume ancho */
-    }
-
-    /* 4. ASEGURAR QUE LA GRID NO SE DESBORDE */
-    .production-grid {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        margin: 0;
-        gap: 15px;
-    }
-
-    .two-cols {
-        display: flex !important; /* Cambiamos grid por flex */
-        flex-direction: column !important; /* Uno arriba del otro */
-        gap: 10px;
         width: 100%;
     }
+
+    /* 2. Layout y Contenedores */
+    .layout { display: block !important; }
+    .content { margin-left: 0 !important; width: 100% !important; padding: 0 !important; }
+    .page { padding: 10px !important; width: 100% !important; box-sizing: border-box; }
+
+    /* 3. Grid y Paneles */
+    .production-grid { display: flex; flex-direction: column; gap: 15px; }
+    .panel { padding: 15px !important; width: 100% !important; box-sizing: border-box; }
     
-    .panel {
-        overflow: hidden; /* Corta cualquier desborde accidental */
-        padding: 15px !important;
+    /* 4. Inputs y Selects (Para que no se salgan de la caja) */
+    .two-cols { display: flex !important; flex-direction: column !important; gap: 10px; }
+    .form-group input, .form-group select { 
+        width: 100% !important; 
+        box-sizing: border-box !important; 
+        font-size: 16px; /* Evita zoom en iOS */
     }
-}
 
-    /* 5. FIX PARA TABLAS QUE EMPUJAN */
+    /* 5. Tabla de Insumos (Scroll interno) */
     .consumption-box {
         width: 100%;
-        overflow-x: auto; /* El scroll solo sucede DENTRO de la tabla, no en toda la pantalla */
+        overflow-x: auto; 
         -webkit-overflow-scrolling: touch;
     }
 
+    /* 6. CENTRADO DEL MODAL DE CONFIRMACIÓN */
+    .modal {
+        display: flex !important;
+        align-items: center !important;   /* Centra vertical */
+        justify-content: center !important; /* Centra horizontal */
+        padding: 15px;
+    }
+
+    .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 25px 20px !important;
+        border-radius: 20px !important;
+        box-sizing: border-box;
+    }
+
+    /* Botones del modal uno sobre otro */
+    .modal-actions {
+        flex-direction: column-reverse !important;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .modal-actions button {
+        width: 100% !important;
+        margin: 0 !important;
+        height: 48px;
+    }
+}
   </style>
 </head>
 <body>
