@@ -341,11 +341,67 @@ input, select, textarea {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+/* =========================================================
+   RESPONSIVE: AJUSTES PARA MÓVIL (Kont)
+   ========================================================= */
 
 @media (max-width: 768px) {
-    .content { margin-left: 0; width: 100%; }
-    .header { padding: 0 15px; }
-    .user-name { display: none; } /* Ocultar nombre en móvil para dar espacio */
+    .header {
+        padding: 0 15px; /* Reducimos espacio lateral */
+    }
+
+    /* Ocultamos el subtítulo y el nombre del usuario para ganar espacio */
+    #header-page-subtitle, 
+    .user-name {
+        display: none;
+    }
+
+    .header-title #header-page-title {
+        font-size: 1rem; /* Título un poco más pequeño */
+    }
+
+    /* --- AJUSTES DEL DROPDOWN DE ALERTAS --- */
+    .alerts-dropdown {
+        /* En móvil, el dropdown debe ser casi del ancho total */
+        width: calc(100vw - 30px); 
+        position: fixed; /* Cambiamos a fixed para mejor control */
+        top: 75px;
+        right: 15px;
+        left: 15px;
+        max-height: 70vh; /* Que no tape toda la pantalla verticalmente */
+        z-index: 1100;
+    }
+
+    .alerts-list {
+        max-height: 60vh;
+    }
+
+    /* Hacemos los items un poco más grandes para facilitar el "tap" con el dedo */
+    .alert-item-mini {
+        padding: 15px;
+    }
+
+    .alert-item-mini i {
+        font-size: 1.4rem;
+    }
+
+    .alert-item-mini .info-text b {
+        font-size: 0.9rem;
+    }
+}
+
+/* Ajustes extra para pantallas muy pequeñas (iPhone SE, etc) */
+@media (max-width: 400px) {
+    .header-right {
+        gap: 8px; /* Pegamos más los botones */
+    }
+
+    #btn-open-alerts, 
+    #btn-toggle-sidebar, 
+    #btn-logout {
+        width: 36px;
+        height: 36px;
+    }
 }
 /* =========================================================
    6. BOTONES Y UTILIDADES
