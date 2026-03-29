@@ -413,8 +413,8 @@ async function initLayout() {
   setupLogout();
 
   // --- INICIALIZACIÓN DE ALERTAS ---
-  setupAlertsToggle(); // Activa el click de la campana
-  refreshHeaderAlerts(); // Carga las alertas iniciales
+  setupAlertsToggle(); 
+  refreshHeaderAlerts(); 
 }
 
 // =========================================================
@@ -430,15 +430,17 @@ async function refreshHeaderAlerts() {
     if (!listContainer) return;
 
     try {
-        // Endpoint que debe devolver stock bajo, pagos vencidos, etc.
-        const res = await apiFetch("/alerts/all"); 
-        const alertas = res.data || [];
+        // CORRECCIÓN 1: La ruta correcta es /alerts (sin el /all)
+        const res = await apiFetch("/alerts"); 
+        
+        // CORRECCIÓN 2: Tu backend devuelve directamente el array, no un objeto { data: [...] }
+        const alertas = Array.isArray(res) ? res : (res.data || []);
 
-        // Contar solo las que no han sido resueltas (están en rojo/naranja)
+        // Contar solo las que no han sido resueltas
         const activas = alertas.filter(a => a.status === 'PENDING').length;
         
         if (badge) {
-            badge.textContent = activas;
+            badge.textContent = activas > 99 ? '99+' : activas; // Un toque profesional por si tienes muchas
             badge.style.display = activas > 0 ? "flex" : "none";
         }
 
@@ -448,21 +450,46 @@ async function refreshHeaderAlerts() {
             return;
         }
 
+        // CORRECCIÓN 3: Agregamos un botón para marcar como leída
         listContainer.innerHTML = alertas.map(a => `
-            <div class="alert-item-mini ${a.status === 'RESOLVED' ? 'resolved' : ''}">
-                <i class="${getAlertIconByType(a.tipo)}"></i>
-                <div class="info-text">
-                    <b>${a.titulo}</b>
-                    <span>${a.mensaje}</span>
+            <div class="alert-item-mini ${a.status === 'RESOLVED' ? 'resolved' : ''}" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                    <i class="${getAlertIconByType(a.tipo)}" style="font-size: 1.2rem;"></i>
+                    <div class="info-text">
+                        <b style="font-size: 0.85rem; display: block;">${a.titulo}</b>
+                        <span style="font-size: 0.75rem; color: #666;">${a.mensaje}</span>
+                    </div>
                 </div>
+                ${a.status === 'PENDING' ? `
+                <button onclick="resolveAlertFrontend(${a.id}, event)" style="background: none; border: none; color: #10b981; cursor: pointer; padding: 5px;" title="Marcar como leída">
+                    <i class="bi bi-check2-circle" style="font-size: 1.2rem;"></i>
+                </button>
+                ` : ''}
             </div>
         `).join('');
 
     } catch (err) {
         console.error("Error al cargar alertas del sistema:", err);
-        listContainer.innerHTML = `<p style="padding:15px; font-size:0.7rem; color:red;">Error al conectar con el servicio de alertas.</p>`;
+        listContainer.innerHTML = `<p style="padding:15px; font-size:0.7rem; color:red; text-align:center;">Error al conectar con notificaciones.</p>`;
     }
 }
+
+/**
+ * Función para marcar una alerta como leída desde el frontend
+ */
+window.resolveAlertFrontend = async (alertId, event) => {
+    // Evita que el dropdown se cierre al hacer clic en el check
+    if(event) event.stopPropagation(); 
+    
+    try {
+        await apiFetch(`/alerts/${alertId}/resolve`, "PUT");
+        // Refrescamos la lista para que desaparezca o cambie de estado
+        refreshHeaderAlerts();
+    } catch (error) {
+        console.error("Error al resolver alerta:", error);
+        alert("No se pudo marcar la alerta como leída.");
+    }
+};
 
 /**
  * Configura los eventos de clic para el dropdown de alertas
@@ -489,16 +516,16 @@ function setupAlertsToggle() {
 }
 
 /**
- * Helper para asignar iconos según el tipo de alerta
+ * Helper para asignar iconos según el tipo de alerta (Ajustado a los tipos reales de tu BD)
  */
 function getAlertIconByType(tipo) {
     const icons = {
-        'STOCK': 'bi bi-box-seam-fill text-danger',
-        'PAGO': 'bi bi-credit-card-2-front-fill text-warning',
+        'STOCK_PRODUCTO': 'bi bi-box-seam-fill text-danger',
+        'PAGO_PROVEEDOR': 'bi bi-calendar-x-fill text-warning',
         'SOPORTE': 'bi bi-headset text-primary',
         'SISTEMA': 'bi bi-gear-fill text-secondary'
     };
-    return icons[tipo] || 'bi bi-bell-fill';
+    return icons[tipo] || 'bi bi-bell-fill text-primary';
 }
 
 document.addEventListener("DOMContentLoaded", initLayout);
