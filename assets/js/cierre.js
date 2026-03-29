@@ -181,6 +181,7 @@ async function init() {
                 fecha: inputDate.value,
                 saldo_esperado: saldoEsperadoUSD,
                 saldo_real: Number(inputActual.value),
+                exchange_rate: tasaDelDia,
                 notas: document.getElementById("cierre-notes").value
             };
 
