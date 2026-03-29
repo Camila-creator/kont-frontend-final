@@ -339,7 +339,28 @@ function applyCategoryCustomization() {
 // =========================================================
 // 9. AYUDANTES UNIVERSALES (Money, Date, Audit)
 // =========================================================
+
+// Formateo de moneda (USD)
 const money = (n) => Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/**
+ * LÓGICA DINÁMICA DE ICONOS (Personalización Kont)
+ * Retorna el icono según el método de pago. 
+ * Si es un teléfono recibido, activa la vibración.
+ */
+const getIconForMethod = (metodo, tipo) => {
+    const isIngreso = tipo === 'INGRESO';
+    
+    // Si el método es equipo usado (puedes añadir más variantes si usas otros nombres en DB)
+    if (metodo === 'EQUIPO_USADO' || metodo === 'TELEFONO_PARTE_PAGO') {
+        return `<i class="bi bi-phone-vibrate vibrate-icon" title="Equipo recibido"></i>`;
+    }
+
+    // Iconos por defecto: Flecha abajo para entrada, flecha arriba para salida
+    return isIngreso 
+        ? `<i class="bi bi-arrow-down-circle-fill text-success"></i>` 
+        : `<i class="bi bi-arrow-up-circle-fill text-danger"></i>`;
+};
 
 const formatDateStatus = (dateStr) => {
     if (!dateStr) return `<span class="badge-date">-</span>`;
@@ -370,6 +391,7 @@ async function registrarActividad(modulo, accion, descripcion) {
   } catch (err) { console.error("Error auditoría:", err); }
 }
 
+
 // =========================================================
 // 10. INICIALIZACIÓN MAESTRA
 // =========================================================
@@ -377,16 +399,106 @@ async function initLayout() {
   const isLoginPage = window.location.pathname.includes("login.html");
   if (isLoginPage) return;
 
+  // Carga de componentes base
   await loadComponent("sidebar", "../components/sidebar.html");
   await loadComponent("header", "../components/header.html");
 
+  // Configuración de UI y Seguridad
   applyRolePermissions();
   applyCategoryCustomization(); 
   markActiveMenu();
   updateHeaderTitles();
-  setupSidebarToggle(); // <--- Aquí se activa la magia del Overlay
+  setupSidebarToggle(); 
   updateHeaderUserInfo();
   setupLogout();
+
+  // --- INICIALIZACIÓN DE ALERTAS ---
+  setupAlertsToggle(); // Activa el click de la campana
+  refreshHeaderAlerts(); // Carga las alertas iniciales
+}
+
+// =========================================================
+// 11. SISTEMA DE ALERTAS (Notificaciones de Impacto)
+// =========================================================
+
+/**
+ * Consulta las alertas al backend y actualiza la UI del Header
+ */
+async function refreshHeaderAlerts() {
+    const listContainer = document.getElementById("alerts-list-container");
+    const badge = document.getElementById("alerts-badge");
+    if (!listContainer) return;
+
+    try {
+        // Endpoint que debe devolver stock bajo, pagos vencidos, etc.
+        const res = await apiFetch("/alerts/all"); 
+        const alertas = res.data || [];
+
+        // Contar solo las que no han sido resueltas (están en rojo/naranja)
+        const activas = alertas.filter(a => a.status === 'PENDING').length;
+        
+        if (badge) {
+            badge.textContent = activas;
+            badge.style.display = activas > 0 ? "flex" : "none";
+        }
+
+        // Renderizado de la lista
+        if (alertas.length === 0) {
+            listContainer.innerHTML = `<p style="padding:20px; text-align:center; color:#94a3b8; font-size:0.8rem;">No hay notificaciones pendientes ✨</p>`;
+            return;
+        }
+
+        listContainer.innerHTML = alertas.map(a => `
+            <div class="alert-item-mini ${a.status === 'RESOLVED' ? 'resolved' : ''}">
+                <i class="${getAlertIconByType(a.tipo)}"></i>
+                <div class="info-text">
+                    <b>${a.titulo}</b>
+                    <span>${a.mensaje}</span>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (err) {
+        console.error("Error al cargar alertas del sistema:", err);
+        listContainer.innerHTML = `<p style="padding:15px; font-size:0.7rem; color:red;">Error al conectar con el servicio de alertas.</p>`;
+    }
+}
+
+/**
+ * Configura los eventos de clic para el dropdown de alertas
+ */
+function setupAlertsToggle() {
+    const btn = document.getElementById("btn-open-alerts");
+    const dropdown = document.getElementById("alerts-dropdown");
+
+    if (btn && dropdown) {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle("active");
+            // Si lo abrimos, refrescamos para tener lo último
+            if (dropdown.classList.contains("active")) refreshHeaderAlerts();
+        };
+
+        // Cerrar al hacer clic en cualquier otra parte de la pantalla
+        document.addEventListener("click", (e) => {
+            if (!dropdown.contains(e.target) && e.target !== btn) {
+                dropdown.classList.remove("active");
+            }
+        });
+    }
+}
+
+/**
+ * Helper para asignar iconos según el tipo de alerta
+ */
+function getAlertIconByType(tipo) {
+    const icons = {
+        'STOCK': 'bi bi-box-seam-fill text-danger',
+        'PAGO': 'bi bi-credit-card-2-front-fill text-warning',
+        'SOPORTE': 'bi bi-headset text-primary',
+        'SISTEMA': 'bi bi-gear-fill text-secondary'
+    };
+    return icons[tipo] || 'bi bi-bell-fill';
 }
 
 document.addEventListener("DOMContentLoaded", initLayout);

@@ -72,10 +72,18 @@ function renderTable(movimientos) {
 
     movimientos.forEach(m => {
         const isIngreso = m.tipo === 'INGRESO';
+        
+        // USAMOS EL AYUDANTE DEL MAIN.JS
+        const iconHtml = getIconForMethod(m.metodo_pago, m.tipo);
+
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td>${fmtTime(m.created_at)}</td>
-            <td><span class="badge-type ${isIngreso ? 'bg-in' : 'bg-out'}">${isIngreso ? 'Venta' : 'Gasto'}</span></td>
+            <td>
+                <span class="badge-type ${isIngreso ? 'bg-in' : 'bg-out'}">
+                    ${iconHtml} ${isIngreso ? 'Venta' : 'Gasto'}
+                </span>
+            </td>
             <td>${m.descripcion}</td>
             <td><small>${m.metodo_pago || 'N/A'}</small></td>
             <td style="text-align: right; font-weight: 700; color: ${isIngreso ? '#10b981' : '#ef4444'};">
