@@ -1,4 +1,5 @@
 // ---------------- CONFIGURACIÓN API ----------------
+// Se asume que API_BASE está definido globalmente en main.js
 const API_CAJA = `${API_BASE}/caja`; 
 
 // ---------------- ELEMENTOS UI ----------------
@@ -22,14 +23,15 @@ const alertDescuadre = document.getElementById("descuadre-alert");
 let saldoEsperadoUSD = 0;
 let tasaDelDia = 0;
 
-// ---------------- HELPERS (Usando los de tu main.js) ----------------
+// ---------------- HELPERS ----------------
+// (Las funciones apiFetch, money, showToast y registrarActividad vienen de main.js)
+
 function fmtTime(iso) { 
-  if(!iso) return "-";
-  return new Date(iso).toLocaleTimeString("es-ES", {hour: '2-digit', minute:'2-digit'});
+    if(!iso) return "-";
+    return new Date(iso).toLocaleTimeString("es-ES", {hour: '2-digit', minute:'2-digit'});
 }
 
 // ---------------- LÓGICA PRINCIPAL ----------------
-
 async function loadDia(fecha) {
     try {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">Cargando movimientos...</td></tr>`;
@@ -52,11 +54,16 @@ async function loadDia(fecha) {
 
         renderTable(movimientos || []);
 
-        // Bloqueo de UI si ya está cerrada
+        // Bloqueo de UI si la caja ya está cerrada
         const isCerrada = estado === 'CERRADA';
         btnCloseRegister.disabled = isCerrada;
-        btnCloseRegister.innerHTML = isCerrada ? `<i class="bi bi-lock-fill"></i> Caja Cerrada` : `<i class="bi bi-safe-fill"></i> Ejecutar Cierre`;
-        btnCloseRegister.className = isCerrada ? "btn-disabled" : "btn-primary";
+        btnCloseRegister.innerHTML = isCerrada 
+            ? `<i class="bi bi-lock-fill"></i> Caja Cerrada` 
+            : `<i class="bi bi-safe-fill"></i> Ejecutar Cierre`;
+        
+        // Manejo de clases en base al estado
+        btnCloseRegister.className = isCerrada ? "btn-secondary" : "btn-primary";
+        if (!isCerrada) btnCloseRegister.style.background = "#10b981"; // Restaura el color original si está abierta
 
     } catch (err) {
         console.error("Error cargando caja:", err);
@@ -74,9 +81,13 @@ function renderTable(movimientos) {
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td>${fmtTime(m.created_at)}</td>
-            <td><span class="badge-${isIngreso ? 'success' : 'danger'}">${isIngreso ? 'Venta' : 'Gasto'}</span></td>
+            <td>
+                <span class="badge-type ${isIngreso ? 'bg-in' : 'bg-out'}">
+                    ${isIngreso ? 'Venta' : 'Gasto'}
+                </span>
+            </td>
             <td>${m.descripcion}</td>
-            <td><small>${m.metodo_pago}</small></td>
+            <td><small>${m.metodo_pago || 'N/A'}</small></td>
             <td style="text-align: right; font-weight: 700; color: ${isIngreso ? '#10b981' : '#ef4444'};">
                 ${isIngreso ? '+' : '-'} ${money(m.monto)}
             </td>
@@ -85,8 +96,7 @@ function renderTable(movimientos) {
     });
 }
 
-// ---------------- LÓGICA DEL MODAL (FIXED) ----------------
-
+// ---------------- LÓGICA DEL MODAL ----------------
 function openModal() {
     // Seteamos el valor esperado en el label del modal
     labelExpected.innerHTML = `
@@ -115,6 +125,7 @@ inputActual.addEventListener("input", () => {
     const diff = contado - saldoEsperadoUSD;
 
     alertDescuadre.style.display = "block";
+    
     if (Math.abs(diff) < 0.01) {
         alertDescuadre.style.background = "#dcfce7";
         alertDescuadre.style.color = "#166534";
@@ -149,7 +160,7 @@ formCierre.addEventListener("submit", async (e) => {
             body: JSON.stringify(dataCierre)
         });
 
-        // Registrar en auditoría (usando tu función de main.js)
+        // Registrar en auditoría (usando la función de main.js)
         await registrarActividad('FINANZAS', 'CIERRE_CAJA', `Cierre de caja el ${dataCierre.fecha}. Descuadre: ${money(diff)}`);
 
         showToast("¡Caja cerrada exitosamente!");
