@@ -269,6 +269,102 @@
         box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2) !important;
     }
 
+    /* 1. Convertir la tabla de artículos en tarjetas */
+    #items-table thead {
+        display: none; /* Escondemos los encabezados en móvil */
+    }
+
+    #items-table tbody tr {
+        display: block;
+        padding: 15px;
+        border-bottom: 5px solid #f1f5f9; /* Separador grueso entre productos */
+        position: relative;
+    }
+
+    #items-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border: none;
+        text-align: right;
+    }
+
+    #items-table td::before {
+        content: attr(data-label); /* Necesitas agregar data-label en tu JS */
+        font-weight: 700;
+        color: #64748b;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        text-align: left;
+    }
+
+    /* Ajuste especial para la columna de eliminar */
+    #items-table td:last-child {
+        justify-content: center;
+        background: #fff1f2;
+        margin-top: 10px;
+        border-radius: 8px;
+    }
+
+    /* 2. EL TOTAL DE LA FACTURA (Lo más importante) */
+    #items-table tfoot {
+        display: block;
+        background: #f8fafc !important;
+        padding: 20px;
+        border-top: 2px solid #e2e8f0;
+    }
+
+    #items-table tfoot tr {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    #items-table tfoot td {
+        display: block;
+        width: 100%;
+        text-align: center !important;
+        padding: 0 !important;
+    }
+
+    #purchase-total-view {
+        font-size: 1.8rem !important; /* Más grande en móvil para que destaque */
+        color: #1e293b;
+    }
+
+    #purchase-total-bs-view {
+        font-size: 1.1rem !important;
+        background: #dcfce7;
+        padding: 5px 15px;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    /* 3. Ajuste de la Tasa BCV (Sección superior) */
+    .tasa-tag {
+        padding: 15px;
+    }
+
+    .tasa-tag > div {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .tasa-tag .form-group {
+        width: 100% !important;
+        flex: none !important;
+    }
+
+    .tasa-tag div[style*="text-align: right"] {
+        text-align: center !important;
+        font-size: 0.7rem;
+        border-top: 1px solid #bbf7d0;
+        padding-top: 10px;
+    }
+
+
     /* Ajuste para que los botones quepan bien en pantallas angostas */
     @media (max-width: 480px) {
         .modal-actions {
