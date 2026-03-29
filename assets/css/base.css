@@ -70,7 +70,7 @@ input, select, textarea {
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 1000;
+    z-index: 2000;
     box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), left 0.3s ease;
     overflow-x: hidden !important; 
@@ -439,17 +439,25 @@ button, a.btn-primary, button.btn-primary, .btn-success, .btn-danger, .btn-secon
    7. ADAPTACIÓN MOBILE
    ========================================================= */
 @media (max-width: 768px) {
-    .sidebar { width: 280px; left: -280px; }
-    .sidebar.active { left: 0 !important; }
-    .content { margin-left: 0 !important; width: 100% !important; }
+    .sidebar { width: 280px;
+         left: -280px; }
+    .sidebar.active { 
+        left: 0 !important; }
+    .content { margin-left: 0 !important;
+         width: 100% !important; }
     
     .header-page-subtitle, .user-name { display: none !important; }
     .header { padding: 0 15px; }
 
     .sidebar-overlay {
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(3px);
-        display: none; z-index: 950;
+        position: fixed; 
+        top: 0; left: 0; 
+        width: 100vw; 
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.7); 
+        backdrop-filter: blur(3px);
+        display: none;
+         z-index: 1500;
     }
     .sidebar-overlay.active { display: block; }
 
