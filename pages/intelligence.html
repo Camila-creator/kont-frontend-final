@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Kont Intelligence | Proyección y Operaciones</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+    /* 1. VARIABLES ESTRATÉGICAS */
+    :root {
+        --throughput: #10b981;
+        --inventory: #6366f1;
+        --oe: #f59e0b;
+        --dark-card: #1e293b;
+        --primary: #6366f1;
+        --border: #e2e8f0;
+        --bg-light: #f8fafc;
+        --success: #10b981;
+    }
+
+    /* 2. MÉTRICAS (KPIs) - ESTILO PREMIUM */
+    .action-container {
+        display: grid;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .metric-card {
+        background: white;
+        padding: 24px;
+        border-radius: 24px;
+        border: 1px solid var(--border);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.02);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05);
+    }
+
+    .metric-card .filter-label {
+        font-weight: 800;
+        font-size: 0.7rem;
+        letter-spacing: 0.05rem;
+        display: block;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+    }
+
+    .metric-card small {
+        color: #94a3b8;
+        font-weight: 500;
+        font-size: 0.8rem;
+    }
+
+    /* 3. RESTRICCIONES Y ALERTAS */
+    .bottleneck-alert {
+        background: #fff1f2;
+        border: 2px dashed #fb7185;
+        color: #e11d48;
+        padding: 18px;
+        border-radius: 20px;
+        margin-top: 15px;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        display: none;
+        animation: fadeIn 0.4s ease;
+    }
+
+    .restriction-item {
+        padding: 12px;
+        border-radius: 14px;
+        background: var(--bg-light);
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid var(--border);
+    }
+
+    /* 4. KONT ASSISTANT (IA CARD) */
+    .ai-card {
+        margin-top: 30px;
+        background: var(--dark-card);
+        border: none;
+        border-radius: 28px;
+        padding: 35px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    }
+
+    .pulse-icon {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        animation: pulse-green 2s infinite;
+    }
+
+    @keyframes pulse-green {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .kont-message-bubble {
+        background: rgba(255, 255, 255, 0.05);
+        border-left: 4px solid var(--success);
+        padding: 20px;
+        border-radius: 0 20px 20px 20px;
+        backdrop-filter: blur(10px);
+    }
+
+    /* 5. BOTONES ESTRATÉGICOS */
+    .btn-intelligence {
+        padding: 12px 20px;
+        border-radius: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-intelligence:active { transform: scale(0.96); }
+
+    /* 6. MEDIA QUERIES (RESPONSIVE) */
+    @media (max-width: 1024px) {
+        .intelligence-grid {
+            grid-template-columns: 1fr !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page { padding: 15px !important; }
+        
+        .page-header h1 { font-size: 1.7rem; }
+
+        .action-container {
+            grid-template-columns: 1fr !important;
+            gap: 15px;
+        }
+
+        .metric-card {
+            padding: 20px;
+        }
+
+        .metric-card #val-throughput, 
+        .metric-card #val-inventory, 
+        .metric-card #val-oe {
+            font-size: 1.5rem !important;
+        }
+
+        .ai-card {
+            padding: 25px 20px;
+            margin-top: 20px;
+        }
+
+        .ai-card h2 { font-size: 1rem !important; }
+
+        .ai-card .btn-intelligence {
+            width: 100%;
+            justify-content: center;
+        }
+
+        div[style*="display: flex; gap: 10px"] {
+            flex-direction: column;
+        }
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 1. EL CONTENEDOR DE MENSAJES */
+    #kont-messages {
+        margin-top: 10px;
+        animation: slideUp 0.5s ease-out;
+    }
+
+    /* 2. LA BURBUJA DE KONT (Efecto Cristal Moderno) */
+    .kont-message-bubble {
+        background: rgba(255, 255, 255, 0.07); /* Blanco ultra transparente */
+        backdrop-filter: blur(12px); /* Desenfoque de fondo estilo iOS */
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-left: 5px solid var(--success); /* El color verde de "todo bien" */
+        padding: 25px;
+        border-radius: 0 24px 24px 24px; /* Estilo chat moderno */
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .kont-message-bubble:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-left-width: 8px; /* Feedback visual al pasar el mouse */
+    }
+
+    /* 3. EL TEXTO DE LA IA (Legibilidad Pro) */
+    #main-ai-insight {
+        margin: 0;
+        font-size: 1.15rem;
+        line-height: 1.7;
+        font-weight: 500;
+        color: #000000 !important; /* Un blanco azulado que no lastima los ojos */
+        letter-spacing: -0.2px;
+    }
+
+    /* Resaltados automáticos (para cuando uses <strong> en JS) */
+    #main-ai-insight strong {
+        color: var(--success);
+        font-weight: 800;
+        background: rgba(16, 185, 129, 0.1);
+        padding: 2px 6px;
+        border-radius: 6px;
+    }
+
+    /* 4. ANIMACIONES */
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 5. AJUSTE PARA MÓVILES */
+    @media (max-width: 768px) {
+        .kont-message-bubble {
+            padding: 18px;
+            border-radius: 0 18px 18px 18px;
+        }
+        
+        #main-ai-insight {
+            font-size: 1.05rem;
+        }
+    }
+</style>
+</head>
+<body style="background: #f1f5f9;">
+
+    
+
+<div class="layout">
+    <div class="content">
+        <div class="page">
+            
+            <div class="page-header" style="margin-bottom: 25px;">
+                <h1 style="color: var(--dark); font-weight: 900; font-size: 2.2rem; letter-spacing: -1px;">🧠 Kont Intelligence</h1>
+                <p style="color: #64748b;">Análisis de Operaciones Basado en la Teoría de Restricciones.</p>
+            </div>
+
+            <div class="action-container" style="grid-template-columns: 1fr 1fr 1fr;">
+                <div class="metric-card">
+                    <span class="filter-label" style="color: var(--throughput);">THROUGHPUT (Ingreso Neto)</span>
+                    <div id="val-throughput" style="font-size: 1.8rem; font-weight: 900;">$ 0.00</div>
+                    <small>Dinero generado por ventas.</small>
+                </div>
+                <div class="metric-card">
+                    <span class="filter-label" style="color: var(--inventory);">INVENTARIO (Activos)</span>
+                    <div id="val-inventory" style="font-size: 1.8rem; font-weight: 900;">$ 0.00</div>
+                    <small>Dinero estancado en el sistema.</small>
+                </div>
+                <div class="metric-card">
+                    <span class="filter-label" style="color: var(--oe);">GASTOS OPERATIVOS</span>
+                    <div id="val-oe" style="font-size: 1.8rem; font-weight: 900;">$ 0.00</div>
+                    <small>Dinero necesario para operar.</small>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 25px;">
+                
+                <div class="card" style="background: white; border-radius: 20px; padding: 25px;">
+                    <h3 style="font-weight: 900; margin-bottom: 15px;">Proyección de Ventas vs Capacidad de Inventario</h3>
+                    <canvas id="projectionChart" height="150"></canvas>
+                </div>
+
+                <div class="card" style="background: white; border-radius: 20px; padding: 25px;">
+                    <h3 style="font-weight: 900; margin-bottom: 15px;">Identificador de Restricciones</h3>
+                    <div id="bottleneck-list">
+                        </div>
+                    <div class="bottleneck-alert" id="global-alert">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>RESTRICCIÓN DETECTADA:</strong> El stock de "Iphone 15" limita tu meta mensual.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 25px; background: var(--dark); border: none; border-radius: 24px; padding: 30px; color: white; position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -20px; right: -20px; font-size: 8rem; color: rgba(255,255,255,0.03); transform: rotate(15deg);">
+        <i class="bi bi-robot"></i>
+    </div>
+    
+    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+        <div class="pulse-icon" style="background: var(--success); width: 12px; height: 12px;"></div>
+        <h2 style="margin:0; font-weight: 900; letter-spacing: 1px; font-size: 1.2rem; color:#000000;">KONT ASSISTANT: ANÁLISIS ESTRATÉGICO</h2>
+    </div>
+
+    <div id="kont-messages" style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="kont-message-bubble">
+            <p id="main-ai-insight" style="font-size: 1.1rem; line-height: 1.6; color: #000000;">
+                Analizando datos de Marketing vs Operaciones... Dame un segundo
+            </p>
+        </div>
+    </div>
+
+    <div style="margin-top: 25px; display: flex; gap: 10px;">
+        <button class="btn-primary" style="background: #6366f1; font-size: 0.8rem;" onclick="generateNewStrategy()">
+            <i class="bi bi-lightbulb"></i> ¿Qué estrategia aplicamos hoy?
+        </button>
+        <button class="btn-secondary" style="background: rgba(11, 11, 11, 0.838); border: none; color:#63f163; font-size: 0.8rem;">
+            Ver Reporte de Marketing
+        </button>
+    </div>
+</div>
+
+<script src="../assets/js/intelligence.js"></script>
+</body>
+</html>
