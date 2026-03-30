@@ -122,76 +122,150 @@
         .b-fijo { background: #e0f2fe; color: #0369a1; }
         .b-esporadico { background: #fef3c7; color: #92400e; }
 
+        /* Estilo Premium para el Filtro */
+.filter-group-premium {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-label {
+    font-weight: 800;
+    color: #94a3b8;
+    font-size: 0.7rem;
+    letter-spacing: 0.05rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 5px;
+}
+
+.select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.select-icon {
+    position: absolute;
+    left: 15px;
+    color: var(--primary);
+    font-size: 1.1rem;
+    pointer-events: none; /* Para que no bloquee el click del select */
+}
+
+.select-kont {
+    appearance: none; /* Quita la flecha por defecto de Windows/Mac */
+    background: #ffffff;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 15px 12px 45px !important; /* Espacio para el icono */
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--dark);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 220px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.select-kont:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    transform: translateY(-1px);
+}
+
+/* Añadir una flechita personalizada al final */
+.select-wrapper::after {
+    content: "\F282"; /* Icono de flecha de bootstrap-icons */
+    font-family: "bootstrap-icons";
+    position: absolute;
+    right: 15px;
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+/* Ajuste móvil */
+@media (max-width: 768px) {
+    .select-kont {
+        width: 100%;
+        min-width: 100%;
+    }
+    .filter-group-premium {
+        width: 100%;
+    }
+}
+
 /* 6. MEDIA QUERIES (PARA MÓVIL) */
 @media (max-width: 768px) {
     .page { padding: 15px !important; }
     
+    /* 1. Botones principales uno debajo de otro */
     .action-container { 
-        grid-template-columns: 1fr; 
-        gap: 10px; 
+        grid-template-columns: 1fr !important; 
+        gap: 12px; 
     }
     
-    .top-bar { 
-        flex-direction: column; 
-        align-items: stretch; 
-        text-align: center; 
+    /* 2. Forzar que TODAS las rejillas del formulario sean de una sola columna */
+    .form-grid-kont { 
+        grid-template-columns: 1fr !important; 
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px !important;
     }
 
-    /* Convertir Tabla a Tarjetas */
-    .expense-table-mobile, 
-    .expense-table-mobile thead, 
-    .expense-table-mobile tbody, 
-    .expense-table-mobile th, 
-    .expense-table-mobile td, 
-    .expense-table-mobile tr { 
-        display: block; 
-        width: 100%;
+    /* 3. Ajuste de la sección de Tasa de Cambio (la caja rosada) */
+    #section-exchange {
+        padding: 15px !important;
     }
 
-    .expense-table-mobile thead { display: none; } /* Ocultar cabecera real */
+    /* Rejilla interna de la tasa: que no sea tan gigante */
+    #section-exchange div[style*="display: grid"] {
+        grid-template-columns: 1fr 1fr !important; /* Mantenemos estas lado a lado para que no sea infinita */
+        gap: 10px !important;
+    }
 
+    /* 4. Secciones dinámicas (Proveedor / Cuentas) */
+    .dynamic-section {
+        padding: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box; /* Evita que se salga por la derecha */
+    }
+
+    .dynamic-section .form-group {
+        width: 100% !important;
+        margin-bottom: 5px;
+    }
+
+    /* 5. Modal: Estilo "Sheet" para que no se corte */
+    .modal-content { 
+        width: 92% !important; 
+        max-width: 92% !important;
+        margin: 10px auto !important; 
+        padding: 0 !important;
+        overflow-x: hidden; /* Seguridad extra */
+    }
+
+    #expense-form {
+        padding: 15px !important;
+    }
+
+    /* 6. Tabla a Tarjetas (Igual que antes pero optimizado) */
     .expense-table-mobile tr {
-        background: white;
-        margin-bottom: 20px;
-        padding: 15px;
-        border-radius: 20px;
-        border: 1px solid var(--border);
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 15px;
     }
 
     .expense-table-mobile td {
-        text-align: right;
-        padding: 12px 5px;
-        border-bottom: 1px solid var(--bg-light);
-        position: relative;
-        min-height: 45px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        padding: 10px 5px !important;
+        text-align: right !important;
     }
-
-    .expense-table-mobile td:last-child { 
-        border: none; 
-        justify-content: center; 
-        background: var(--bg-light);
-        margin-top: 10px;
-        border-radius: 12px;
-    }
-
-    /* El truco del data-label */
-    .expense-table-mobile td::before {
-        content: attr(data-label);
-        float: left;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: #94a3b8;
-        font-size: 0.7rem;
-    }
-
-    /* Ajustes de Modal */
-    .form-grid-kont { grid-template-columns: 1fr !important; }
-    .full-width { grid-column: span 1 !important; }
-    .modal-content { width: 95%; margin: 10px auto; }
 }
     </style>
 </head>
@@ -221,15 +295,21 @@
             </div>
 
             <div class="top-bar">
-                <div class="filter-group">
-                    <label style="font-weight: 800; color: #94a3b8; font-size: 0.75rem; display: block; margin-bottom: 5px;">HISTÓRICO</label>
-                    <select id="expense-period" class="form-group" style="padding: 8px 15px; min-width: 180px;">
-                        <option value="weekly">Esta Semana</option>
-                        <option value="monthly" selected>Este Mes</option>
-                        <option value="quarterly">Trimestre</option>
-                        <option value="yearly">Año Completo</option>
-                    </select>
-                </div>
+    <div class="filter-group-premium">
+        <label class="filter-label">
+            <i class="bi bi-clock-history"></i> RANGO HISTÓRICO
+        </label>
+        <div class="select-wrapper">
+            <i class="bi bi-calendar3 select-icon"></i>
+            <select id="expense-period" class="select-kont">
+                <option value="weekly">Esta Semana</option>
+                <option value="monthly" selected>Este Mes</option>
+                <option value="quarterly">Trimestre</option>
+                <option value="yearly">Año Completo</option>
+            </select>
+        </div>
+    </div>
+
                 <div class="total-badge">
                     <span style="color: #f43f5e; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Total Egresos</span>
                     <div id="display-total-expense" style="font-size: 1.8rem; font-weight: 900; color: var(--danger);">$ 0.00</div>
