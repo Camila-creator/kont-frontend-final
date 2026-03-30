@@ -2,7 +2,7 @@
 const API_EXPENSES = `${API_BASE}/expenses`;
 const API_SUPPLIERS = `${API_BASE}/suppliers`;
 const API_ACCOUNTS = `${API_BASE}/finance/accounts`;
-const API_EXCHANGE = `${API_BASE}/exchange`; // Endpoint de tasas
+const API_EXCHANGE = `${API_BASE}/exchange`; 
 
 // ---------------- ELEMENTOS DEL DOM ----------------
 const tableBody = document.querySelector("#expenses-body");
@@ -28,17 +28,23 @@ const inputAccount = document.getElementById("exp-account");
 const inputPlace = document.getElementById("exp-place");
 const inputMethod = document.getElementById("exp-method");
 
+// NUEVOS ELEMENTOS MULTIMONEDA
+const sectionExchange = document.getElementById("section-exchange");
+const inputRateType = document.getElementById("exp-rate-type");
+const inputRateValue = document.getElementById("exp-rate-value");
+const currencyAddon = document.getElementById("currency-addon");
+const conversionPreview = document.getElementById("conversion-preview");
+
 const displayTotal = document.getElementById("display-total-expense");
 
 // ---------------- ESTADO LOCAL ----------------
 let expenses = [];
 let suppliers = [];
 let accounts = []; 
-let rates = { USD: 1, EUR: 1 }; // Almacenamos las tasas aquí
+let rates = { USD: 1, EUR: 1 }; 
 
 // ---------------- CARGA DE DATOS ----------------
 
-// Cargar tasas de cambio (Igual que en pedidos)
 async function loadSystemRate() {
     try {
         const response = await apiFetch(API_EXCHANGE); 
@@ -47,7 +53,6 @@ async function loadSystemRate() {
         const eurData = data.find(r => r.currency_code === 'EUR');
         if (usdData) rates.USD = parseFloat(usdData.rate_value);
         if (eurData) rates.EUR = parseFloat(eurData.rate_value);
-        console.log("Tasas cargadas en Gastos:", rates);
     } catch (err) { console.error("Error cargando tasas:", err); }
 }
 
@@ -100,12 +105,58 @@ function fillAccountsSelect() {
     });
 }
 
+// ---------------- LÓGICA DE MULTIMONEDA (EVENTOS) ----------------
+function updateConversionPreview() {
+    const amount = parseFloat(inputAmount.value) || 0;
+    const rate = parseFloat(inputRateValue.value) || 1;
+    const selectedAcc = accounts.find(acc => acc.id == inputAccount.value);
+    
+    if (selectedAcc && selectedAcc.currency === 'VES') {
+        const result = amount / rate;
+        conversionPreview.textContent = `$ ${result.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    }
+}
+
+function handleAccountChange() {
+    const selectedAcc = accounts.find(acc => acc.id == inputAccount.value);
+    
+    if (selectedAcc && selectedAcc.currency === 'VES') {
+        sectionExchange.classList.remove("hidden");
+        currencyAddon.textContent = "Bs.";
+        inputRateValue.value = rates.USD;
+        inputRateType.value = "USD";
+        inputRateValue.readOnly = true;
+    } else {
+        sectionExchange.classList.add("hidden");
+        currencyAddon.textContent = "$";
+        inputRateValue.value = 1;
+    }
+    updateConversionPreview();
+}
+
+function handleRateTypeChange() {
+    if (inputRateType.value === 'USD') {
+        inputRateValue.value = rates.USD;
+        inputRateValue.readOnly = true;
+    } else if (inputRateType.value === 'EUR') {
+        inputRateValue.value = rates.EUR;
+        inputRateValue.readOnly = true;
+    } else {
+        inputRateValue.readOnly = false;
+    }
+    updateConversionPreview();
+}
+
 // ---------------- LÓGICA DE MODAL ----------------
 function openExpenseModal(type) {
     form.reset();
     inputId.value = "";
     inputCategory.value = type;
     inputDate.value = new Date().toISOString().split('T')[0];
+    
+    // Reset multimoneda
+    sectionExchange.classList.add("hidden");
+    currencyAddon.textContent = "$";
 
     if (type === 'FIXED') {
         modalTitle.textContent = "Registrar Gasto Fijo";
@@ -121,16 +172,13 @@ function openExpenseModal(type) {
     modal.classList.remove("hidden");
 }
 
-// ---------------- CRUD (MULTIMONEDA) ----------------
+// ---------------- CRUD ----------------
 async function onSubmit(e) {
     e.preventDefault();
 
-    // 1. Identificar la moneda de la cuenta seleccionada
     const selectedAcc = accounts.find(a => a.id == inputAccount.value);
     const currency = selectedAcc ? selectedAcc.currency : 'USD';
-    
-    // 2. Obtener la tasa correspondiente (si es Bs, buscamos la de USD)
-    const currentRate = currency === 'VES' ? rates.USD : 1;
+    const currentRate = parseFloat(inputRateValue.value) || 1;
 
     const payload = {
         category: inputCategory.value,
@@ -141,8 +189,6 @@ async function onSubmit(e) {
         supplier_id: inputCategory.value === 'FIXED' ? (inputSupplier.value || null) : null,
         finance_account_id: inputAccount.value || null,
         place: inputCategory.value === 'SPORADIC' ? inputPlace.value : null,
-        
-        // --- MULTIMONEDA ---
         currency: currency,
         exchange_rate: currentRate 
     };
@@ -155,9 +201,7 @@ async function onSubmit(e) {
         }
         modal.classList.add("hidden");
         await loadExpenses();
-    } catch (err) { 
-        alert("Error: " + err.message);
-    }
+    } catch (err) { alert("Error: " + err.message); }
 }
 
 // ---------------- RENDER ----------------
@@ -169,7 +213,6 @@ function renderTable() {
         const tr = document.createElement("tr");
         const badgeClass = ex.category === 'FIXED' ? 'b-fijo' : 'b-esporadico';
         const badgeText = ex.category === 'FIXED' ? 'Fijo' : 'Eventual';
-        
         const accountName = ex.account_name || 'N/A';
         const curr = ex.currency || 'USD';
         const symbol = curr === 'VES' ? 'Bs.' : '$';
@@ -179,7 +222,7 @@ function renderTable() {
             <td style="padding:15px; font-weight:600;">${ex.description}</td>
             <td style="padding:15px;"><span class="badge ${badgeClass}">${badgeText}</span></td>
             <td style="padding:15px;">${ex.place || ex.supplier_name || 'Particular'}</td>
-            <td style="padding:15px; font-weight:bold; color:#ef4444;">
+            <td style="padding:15px; font-weight:bold; color:#ef4444; text-align:right;">
                 ${symbol} ${parseFloat(ex.amount).toFixed(2)}
                 ${curr === 'VES' ? `<br><small style="color:gray; font-weight:normal;">($ ${(ex.amount / ex.exchange_rate).toFixed(2)})</small>` : ''}
             </td>
@@ -210,13 +253,11 @@ async function deleteExpense(id) {
 }
 
 function updateTotal() {
-    // Calculamos el total convertido a USD para el display principal del Dashboard
     const totalUSD = expenses.reduce((acc, ex) => {
         const val = parseFloat(ex.amount);
         const rate = parseFloat(ex.exchange_rate) || 1;
         return acc + (ex.currency === 'VES' ? (val / rate) : val);
     }, 0);
-    
     displayTotal.textContent = `$ ${totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 }
 
@@ -232,8 +273,14 @@ async function init() {
     if (form) form.onsubmit = onSubmit;
     document.getElementById("expense-period")?.addEventListener("change", loadExpenses);
 
+    // Eventos Multimoneda
+    inputAccount?.addEventListener("change", handleAccountChange);
+    inputRateType?.addEventListener("change", handleRateTypeChange);
+    inputAmount?.addEventListener("input", updateConversionPreview);
+    inputRateValue?.addEventListener("input", updateConversionPreview);
+
     await Promise.all([
-        loadSystemRate(), // Cargamos la tasa primero
+        loadSystemRate(), 
         loadSuppliers(), 
         loadAccounts(), 
         loadExpenses()
