@@ -15,7 +15,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
     btn.disabled = true;
   
     try {
-        // 🚀 CAMBIO CLAVE: Ahora llamamos a Render, no a tu computadora
+        // 🚀 Llamada a la API en Render
         const res = await fetch("https://kont-backend-final.onrender.com/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -34,11 +34,29 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
         
         if (data.user && data.user.tenant_id) {
             localStorage.setItem("agromedic_tenant_id", data.user.tenant_id);
-            console.log("✅ Tenant ID guardado correctamente:", data.user.tenant_id);
+            console.log("✅ Sesión iniciada para tenant:", data.user.tenant_id);
         }
   
-        // 🚀 Redirección al Dashboard tras éxito
-        window.location.href = "./dashboard.html";
+        // 🎯 LÓGICA DE REDIRECCIÓN INTELIGENTE (Destino por Rol)
+        const user = data.user;
+        let destination = "dashboard.html"; // Por defecto para ADMIN y SUPER_ADMIN
+
+        if (user.role === "SELLER") {
+            destination = "pedidos.html"; 
+        } else if (user.role === "WAREHOUSE") {
+            destination = "productos.html";
+        } else if (user.role === "FINANCE") {
+            destination = "pagos.html";
+        } else if (user.role === "MARKETING") {
+            destination = "mkt_calendar.html";
+        }
+
+        console.log(`🚀 Redirigiendo a ${user.role} hacia: ${destination}`);
+
+        // ⏱️ Pequeño delay y uso de replace para evitar el "rebote"
+        setTimeout(() => {
+            window.location.replace(destination);
+        }, 100);
   
     } catch (err) {
         if (errorBox) {
