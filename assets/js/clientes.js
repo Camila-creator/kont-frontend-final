@@ -157,14 +157,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const id = inputId.value;
         const payload = {
     name: safeText(inputName.value),
-    type: inputType.value || "RETAIL",
-    doc: safeText(inputDoc.value), // Ahora coincide con el Schema
+    type: inputType.value,
+    doc: safeText(inputDoc.value), 
     phone: safeText(inputPhone.value),
-    email: safeText(inputEmail.value) || null, // Importante: si está vacío, mandar null
+    // Si el email está vacío, mandamos null para que Zod no intente validarlo como correo
+    email: safeText(inputEmail.value) || null, 
     location: safeText(inputLocation.value),
     address: safeText(inputAddress.value),
-    terms: inputTerms.value || "CONTADO",
-    wholesale_min: Number(inputWholesaleMin.value) || 0, // Convertir a número para Zod
+    terms: inputTerms.value,
+    wholesale_min: toInt(inputWholesaleMin.value),
     notes: safeText(inputNotes.value)
 };
 
