@@ -9,24 +9,46 @@
 const API_BASE = "https://kont-backend-final.onrender.com/api";
 const VERTICALS_WITH_SERIALS = [1, 2]; // 1: Teléfonos, 2: Tecnología
 
-// =========================================================
-// 1. EL CANDADO MÁGICO (Autenticación)
+/// =========================================================
+// 1. EL CANDADO MÁGICO (Autenticación Blindada)
 // =========================================================
 function checkAuth() {
-  const token = localStorage.getItem("agromedic_token");
-  const isLoginPage = window.location.pathname.includes("login.html");
+    const token = localStorage.getItem("agromedic_token");
+    const path = window.location.pathname;
+    
+    // Identificamos si estamos en la raíz o en el login
+    // Vercel a veces usa "/" para el index o omite el .html
+    const isAtLogin = path.includes("login.html") || path === "/" && !token;
 
-  if (!token && !isLoginPage) {
-    window.location.replace("login.html");
-  }
+    // CASO 1: No hay token y no estoy en el login -> Expulsar
+    if (!token && !isAtLogin) {
+        console.warn("🔒 Acceso no autorizado. Redirigiendo a login...");
+        window.location.replace("login.html");
+        return;
+    }
+
+    // CASO 2: Hay token pero estoy en el login -> Mandar al Dashboard
+    // Esto evita que alguien logueado pierda el tiempo en el login
+    if (token && (path.includes("login.html") || path === "/")) {
+        window.location.replace("dashboard.html");
+    }
 }
-checkAuth();
+
+// Ejecutamos con una pequeña validación de carga
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", checkAuth);
+} else {
+    checkAuth();
+}
 
 function isSerialEnabled() {
-  const userData = JSON.parse(localStorage.getItem("agromedic_user"));
-  return VERTICALS_WITH_SERIALS.includes(Number(userData?.tenant_category_id));
+    try {
+        const userData = JSON.parse(localStorage.getItem("agromedic_user"));
+        return VERTICALS_WITH_SERIALS.includes(Number(userData?.tenant_category_id));
+    } catch (e) {
+        return false; // Evita que el sistema explote si userData está vacío
+    }
 }
-
 // =========================================================
 // 2. COMUNICADOR UNIVERSAL (API Fetch Blindado)
 // =========================================================
