@@ -156,17 +156,17 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         const id = inputId.value;
         const payload = {
-            name: safeText(inputName.value),
-            type: inputType.value,
-            doc: safeText(inputDoc.value),
-            phone: safeText(inputPhone.value),
-            email: safeText(inputEmail.value),
-            location: safeText(inputLocation.value),
-            address: safeText(inputAddress.value),
-            terms: inputTerms.value,
-            wholesale_min: toInt(inputWholesaleMin.value),
-            notes: safeText(inputNotes.value)
-        };
+    name: safeText(inputName.value),
+    type: inputType.value || "RETAIL",
+    doc: safeText(inputDoc.value), // Ahora coincide con el Schema
+    phone: safeText(inputPhone.value),
+    email: safeText(inputEmail.value) || null, // Importante: si está vacío, mandar null
+    location: safeText(inputLocation.value),
+    address: safeText(inputAddress.value),
+    terms: inputTerms.value || "CONTADO",
+    wholesale_min: Number(inputWholesaleMin.value) || 0, // Convertir a número para Zod
+    notes: safeText(inputNotes.value)
+};
 
         try {
             if (id) {
