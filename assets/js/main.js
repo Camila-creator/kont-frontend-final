@@ -213,14 +213,14 @@ function setupLogout() {
 }
 
 // =========================================================
-// 7. MAGIA DE PERMISOS (MODO DIOS Y FILTRADO ACTIVO)
+// 7. MAGIA DE PERMISOS (Sincronizado con constants/roles.js)
 // =========================================================
 function applyRolePermissions() {
   const userData = localStorage.getItem("agromedic_user");
   if (!userData) return;
 
   const user = JSON.parse(userData);
-  const role = user.role;
+  const role = user.role; // Ahora vendrá como SELLER, WAREHOUSE, ADMIN, etc.
   const isCoordinator = user.is_coordinator;
   const isActive = user.is_active; 
   
@@ -232,36 +232,57 @@ function applyRolePermissions() {
     const text = textEl.textContent.trim();
     let allowed = false;
 
+    // 1. MODO DIOS
     if (role === "SUPER_ADMIN") {
       allowed = true;
     } 
-    else if (role === "ADMIN_BRAND") {
-      const forbiddenForBrand = ["Dashboard SaaS", "Empresas (Tenants)", "Usuarios Globales", "Reportes de Uso", "Soporte Técnico"];
-      allowed = !forbiddenForBrand.includes(text);
+    // 2. ADMIN DE MARCA (Acceso total menos cosas de dueños del SaaS)
+    else if (role === "ADMIN") {
+      const saasOnly = ["Dashboard SaaS", "Empresas (Tenants)", "Usuarios Globales", "Reportes de Uso", "Soporte Técnico"];
+      allowed = !saasOnly.includes(text);
     } 
+    // 3. ROLES OPERATIVOS
     else {
-      const saasItems = ["Dashboard SaaS", "Empresas (Tenants)", "Usuarios Globales", "Reportes de Uso", "Soporte Técnico", "Auditoría"];
+      // Bloqueo total de Auditoría y SaaS para roles menores
+      const forbiddenGeneral = ["Dashboard SaaS", "Empresas (Tenants)", "Usuarios Globales", "Reportes de Uso", "Soporte Técnico", "Auditoría"];
       
-      if (saasItems.includes(text)) {
+      if (forbiddenGeneral.includes(text)) {
         allowed = false;
       } else if (text === "Contactar Soporte" || text === "Equipos (IMEI)") {
         allowed = true; 
-      } else if (role === "SALES" && ["Pedidos", "Clientes", "Cuentas por cobrar", "Pagos de Clientes"].includes(text)) {
+      } 
+      // VENDEDORES (Antes era SALES, ahora SELLER)
+      else if (role === "SELLER" && ["Pedidos", "Clientes", "Cuentas por cobrar", "Pagos de Clientes", "Dashboard"].includes(text)) {
         allowed = true;
-      } else if (role === "INVENTORY" && ["Productos", "Insumos", "Recetas", "Proveedores", "Producción", "Compras"].includes(text)) {
+      } 
+      // ALMACÉN (Antes era INVENTORY, ahora WAREHOUSE)
+      else if (role === "WAREHOUSE" && ["Productos", "Artículos de Venta", "Insumos", "Inventario", "Recetas", "Kits y Combos", "Proveedores", "Producción", "Compras"].includes(text)) {
         allowed = true;
-      } else if (role === "FINANCE" && ["Pagos de Clientes", "Pagos a Proveedores", "Cuentas por cobrar", "Cuentas por pagar", "Movimientos", "Bancos"].includes(text)) {
+      } 
+      // FINANZAS
+      else if (role === "FINANCE" && ["Pagos de Clientes", "Pagos a Proveedores", "Cuentas por cobrar", "Cuentas por pagar", "Movimientos", "Bancos"].includes(text)) {
         allowed = true;
-      } else if (role === "MARKETING" && ["Marketing", "Resultados", "Brand Book", "Buyer Persona", "Calendario Editorial", "Pauta Digital (Ads)", "Publicidad Offline", "Influencers & RR.PP.", "Solicitudes & Tareas"].includes(text)) {
+      } 
+      // MARKETING (Solo si está activo)
+      else if (role === "MARKETING" && ["Marketing", "Resultados", "Brand Book", "Buyer Persona", "Calendario Editorial", "Pauta Digital (Ads)", "Publicidad Offline", "Influencers & RR.PP.", "Solicitudes & Tareas"].includes(text)) {
         allowed = (isActive === true);
       }
 
-      if (text === "Dashboard") allowed = isCoordinator;
+      // El Dashboard principal requiere ser coordinador si no eres Admin
+      if (text === "Dashboard" && !allowed) allowed = isCoordinator;
     }
 
     item.style.display = allowed ? "flex" : "none";
   });
 
+  // Limpieza: Si una sección se queda sin hijos visibles, la ocultamos
+  rehideEmptySections();
+}
+
+/**
+ * Función auxiliar para limpiar títulos de sección vacíos
+ */
+function rehideEmptySections() {
   const sections = document.querySelectorAll(".sidebar-menu .menu-section");
   sections.forEach(section => {
     let hasVisibleItems = false;
