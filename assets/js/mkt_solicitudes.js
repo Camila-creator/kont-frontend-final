@@ -1,42 +1,27 @@
 /* =========================================================
-   SOLICITUDES Y TAREAS (KANBAN) JS - Conectado a PostgreSQL
+   SOLICITUDES Y TAREAS (KANBAN) JS - Integrado con Kont
    ========================================================= */
 
-const API_TASKS = 'https://kont-backend-final.onrender.com/api/mkt-tasks';
-const API_ROLES = 'https://kont-backend-final.onrender.com/api/mkt-tasks/roles';
+// 1. Configuración de Endpoints (Heredando de main.js)
+const API_TASKS = `${API_BASE}/mkt-tasks`;
+const API_ROLES = `${API_BASE}/mkt-tasks/roles`;
 
 let dbRoles = [];
 let dbTasks = [];
 
+// 2. Inicialización
 document.addEventListener('DOMContentLoaded', () => {
     loadAllData();
 });
 
-// Auto-Refresh
+// Auto-Refresh al volver a la pestaña
 document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-        loadAllData(); 
-    }
+    if (document.visibilityState === "visible") loadAllData(); 
 });
 
-// === API FETCH CON GAFETE ===
-async function apiFetch(url, options = {}) {
-    const token = localStorage.getItem("agromedic_token");
-    const res = await fetch(url, {
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}`, ...(options.headers || {}) },
-        ...options,
-    });
-    if (res.status === 401 || res.status === 403) {
-        localStorage.removeItem("agromedic_token");
-        window.location.replace("../pages/login.html");
-        return;
-    }
-    const data = await res.json().catch(() => null);
-    if (!res.ok) throw new Error(data?.message || data?.error || `Error HTTP ${res.status}`);
-    return data;
-}
-
-// === 1. CARGA DE DATOS DESDE EL BACKEND ===
+/**
+ * CARGA INICIAL DE DATOS (ROLES Y TAREAS)
+ */
 async function loadAllData() {
     try {
         const [jsonRoles, jsonTasks] = await Promise.all([
@@ -44,10 +29,14 @@ async function loadAllData() {
             apiFetch(API_TASKS)
         ]);
         
-        if(jsonRoles && jsonRoles.success) dbRoles = jsonRoles.data;
-        if(jsonTasks && jsonTasks.success) dbTasks = jsonTasks.data;
+        if(jsonRoles && (jsonRoles.success || Array.isArray(jsonRoles))) {
+            dbRoles = jsonRoles.data || jsonRoles;
+        }
+        if(jsonTasks && (jsonTasks.success || Array.isArray(jsonTasks))) {
+            dbTasks = jsonTasks.data || jsonTasks;
+        }
 
-        // Limpiar el formato de fecha de Postgres para que JS lo lea bien
+        // Normalizar fechas de Postgres
         dbTasks.forEach(t => {
             if(t.start_date) t.start_date = t.start_date.split('T')[0];
             if(t.deadline) t.deadline = t.deadline.split('T')[0];
@@ -57,82 +46,91 @@ async function loadAllData() {
         renderDashboard();
         renderKanban();
     } catch(e) { 
-        console.error("Error conectando con el servidor de Tareas", e); 
+        console.error("Error cargando el Tablero Kanban:", e); 
     }
 }
 
-// === 2. GESTIÓN DE ROLES (CARGOS) ===
+/**
+ * GESTIÓN DE ÁREAS / ROLES
+ */
 function renderRoles() {
     const filterSelect = document.getElementById('filterRole');
+    const taskSelect = document.getElementById('taskRole');
+    const listContainer = document.getElementById('rolesListContainer');
+    
+    if (!filterSelect || !taskSelect || !listContainer) return;
+
     const currentFilter = filterSelect.value;
     filterSelect.innerHTML = '<option value="ALL">Todas las Áreas</option>';
-    
-    const taskSelect = document.getElementById('taskRole');
-    taskSelect.innerHTML = '';
-
-    const listContainer = document.getElementById('rolesListContainer');
+    taskSelect.innerHTML = '<option value="">Asignar Área...</option>';
     listContainer.innerHTML = '';
 
     dbRoles.forEach(r => {
-        filterSelect.innerHTML += `<option value="${r.id}">${r.name}</option>`;
-        taskSelect.innerHTML += `<option value="${r.id}">${r.name}</option>`;
+        const option = `<option value="${r.id}">${r.name}</option>`;
+        filterSelect.innerHTML += option;
+        taskSelect.innerHTML += option;
         
         listContainer.innerHTML += `
             <div class="role-item">
                 <span>${r.name}</span>
-                <button type="button" class="btn-danger-outline" onclick="deleteRole(${r.id})"><i class="bi bi-trash"></i></button>
-            </div>
-        `;
+                <button type="button" class="btn-role-delete" onclick="deleteRole(${r.id})">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+            </div>`;
     });
 
-    if (currentFilter && [...filterSelect.options].some(o => o.value === currentFilter)) {
-        filterSelect.value = currentFilter; 
-    }
+    if (currentFilter) filterSelect.value = currentFilter; 
 }
 
 async function addRole(e) {
-    e.preventDefault();
-    const newName = document.getElementById('newRoleName').value;
+    if(e) e.preventDefault();
+    const input = document.getElementById('newRoleName');
+    const name = input.value.trim();
+    if(!name) return;
+
     try {
-        await apiFetch(API_ROLES, { method: 'POST', body: JSON.stringify({name: newName}) });
-        document.getElementById('newRoleName').value = '';
+        await apiFetch(API_ROLES, { method: 'POST', body: JSON.stringify({name}) });
+        input.value = '';
         loadAllData();
-        showCustomAlert("Cargo Añadido", `Se ha agregado "${newName}" a las áreas de trabajo.`, "success");
+        showCustomAlert("Área Creada", `"${name}" ahora está disponible.`, "success");
     } catch(err) { console.error(err); }
 }
 
 async function deleteRole(id) {
-    if(confirm("¿Seguro que deseas eliminar esta área de trabajo? Las tareas asignadas a esta área quedarán sin asignar.")) {
-        try {
-            await apiFetch(`${API_ROLES}/${id}`, { method: 'DELETE' });
-            loadAllData();
-        } catch(err) { console.error(err); }
-    }
+    if(!confirm("¿Eliminar esta área? Las tareas asociadas quedarán sin categoría.")) return;
+    try {
+        await apiFetch(`${API_ROLES}/${id}`, { method: 'DELETE' });
+        loadAllData();
+    } catch(err) { console.error(err); }
 }
 
-function openRolesModal() { document.getElementById('rolesModal').classList.add('active'); }
-
-// === 3. RENDERIZADO KANBAN Y DASHBOARD ===
+/**
+ * MÉTRICAS DEL TABLERO
+ */
 function renderDashboard() {
     let activas = 0; let revision = 0; let atrasadas = 0;
     const today = new Date().toISOString().split('T')[0];
 
     dbTasks.forEach(t => {
-        if(t.status !== 'Finalizado' && t.status !== 'Aprobado') activas++;
+        const isClosed = (t.status === 'Finalizado' || t.status === 'Aprobado');
+        if(!isClosed) activas++;
         if(t.status === 'En Revisión') revision++;
-        if(t.status !== 'Finalizado' && t.status !== 'Aprobado' && t.deadline && t.deadline < today) atrasadas++;
+        if(!isClosed && t.deadline && t.deadline < today) atrasadas++;
     });
 
-    document.getElementById('dashActivas').innerText = activas;
-    document.getElementById('dashRevision').innerText = revision;
-    document.getElementById('dashAtrasadas').innerText = atrasadas;
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if(el) el.innerText = val;
+    };
+
+    setVal('dashActivas', activas);
+    setVal('dashRevision', revision);
+    setVal('dashAtrasadas', atrasadas);
 }
 
-function getRoleName(id) {
-    const r = dbRoles.find(role => role.id == id);
-    return r ? r.name : 'Sin Área';
-}
-
+/**
+ * RENDERIZADO DEL KANBAN
+ */
 function renderKanban() {
     const cols = {
         'Por Hacer': document.getElementById('col-todo-cards'),
@@ -143,27 +141,24 @@ function renderKanban() {
     };
 
     const counts = { 'Por Hacer': 0, 'En Progreso': 0, 'En Revisión': 0, 'Aprobado': 0, 'Finalizado': 0 };
-    Object.values(cols).forEach(col => col.innerHTML = '');
+    Object.values(cols).forEach(col => { if(col) col.innerHTML = ''; });
 
-    const filterVal = document.getElementById('filterRole').value;
+    const filterVal = document.getElementById('filterRole')?.value || 'ALL';
     const today = new Date().toISOString().split('T')[0];
 
     dbTasks.forEach(t => {
         if (filterVal !== 'ALL' && t.role_id != filterVal) return;
-
         if(counts[t.status] !== undefined) counts[t.status]++;
 
-        let priClass = 'pri-media';
-        if(t.priority === 'Alta') priClass = 'pri-alta';
-        if(t.priority === 'Baja') priClass = 'pri-baja';
-
+        const priClass = t.priority === 'Alta' ? 'pri-alta' : (t.priority === 'Baja' ? 'pri-baja' : 'pri-media');
+        
         let deadlineHtml = `<i class="bi bi-calendar4"></i> ${t.deadline || 'Sin fecha'}`;
         if (t.status !== 'Finalizado' && t.status !== 'Aprobado' && t.deadline) {
-            if (t.deadline < today) deadlineHtml = `<span class="deadline-overdue" title="¡Atrasado!"><i class="bi bi-exclamation-circle-fill"></i> ${t.deadline}</span>`;
-            else if (t.deadline === today) deadlineHtml = `<span class="deadline-today" title="Entrega Hoy"><i class="bi bi-clock-fill"></i> Hoy</span>`;
+            if (t.deadline < today) deadlineHtml = `<span class="deadline-overdue"><i class="bi bi-exclamation-circle"></i> Atrasado</span>`;
+            else if (t.deadline === today) deadlineHtml = `<span class="deadline-today"><i class="bi bi-clock"></i> Entrega Hoy</span>`;
         }
 
-        const roleName = getRoleName(t.role_id);
+        const roleName = dbRoles.find(r => r.id == t.role_id)?.name || 'General';
 
         const cardHtml = `
             <div class="task-card ${priClass}" draggable="true" ondragstart="drag(event, ${t.id})" onclick="openTaskModal(${t.id})">
@@ -171,59 +166,62 @@ function renderKanban() {
                 <h4 class="task-title">${t.title}</h4>
                 <div class="task-footer">
                     <span class="task-deadline">${deadlineHtml}</span>
-                    <span><i class="bi bi-chat-text" style="color:${t.feedback ? '#06b6d4' : '#e5e7eb'};"></i></span>
+                    <i class="bi bi-chat-left-text" style="color:${t.feedback ? '#06b6d4' : '#d1d5db'}"></i>
                 </div>
-            </div>
-        `;
+            </div>`;
 
         if (cols[t.status]) cols[t.status].innerHTML += cardHtml;
     });
 
-    document.getElementById('count-todo').innerText = counts['Por Hacer'];
-    document.getElementById('count-progreso').innerText = counts['En Progreso'];
-    document.getElementById('count-revision').innerText = counts['En Revisión'];
-    document.getElementById('count-aprobado').innerText = counts['Aprobado'];
-    document.getElementById('count-finalizado').innerText = counts['Finalizado'];
+    // Actualizar contadores de columna
+    Object.keys(counts).forEach(key => {
+        const elId = `count-${key.toLowerCase().replace(' ', '')}`;
+        const el = document.getElementById(elId);
+        if(el) el.innerText = counts[key];
+    });
 }
 
-// === 4. LÓGICA DRAG & DROP Y ACTUALIZACIÓN EN BACKEND ===
+/**
+ * LÓGICA DRAG & DROP
+ */
 function drag(ev, id) { ev.dataTransfer.setData("taskId", id); }
 function allowDrop(ev) { ev.preventDefault(); }
 
 async function drop(ev, newStatus) {
     ev.preventDefault();
     const id = ev.dataTransfer.getData("taskId");
-    const taskIndex = dbTasks.findIndex(t => t.id == id);
+    const task = dbTasks.find(t => t.id == id);
     
-    if (taskIndex > -1) {
-        dbTasks[taskIndex].status = newStatus;
+    if (task && task.status !== newStatus) {
+        const oldStatus = task.status;
+        task.status = newStatus; // Optimismo UI
         renderKanban();
         renderDashboard();
 
         try {
             await apiFetch(`${API_TASKS}/${id}`, {
                 method: 'PUT',
-                body: JSON.stringify(dbTasks[taskIndex])
+                body: JSON.stringify(task)
             });
         } catch(err) {
-            console.error("Error al guardar el nuevo estado:", err);
+            task.status = oldStatus; // Revertir si falla
+            renderKanban();
+            console.error("Error al mover tarea:", err);
         }
     }
 }
 
-// === 5. CONTROL DE MODALES ===
-function switchTab(evt, tabName) {
-    if (evt && evt.preventDefault) evt.preventDefault(); 
-    document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
-    document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
-    document.getElementById(tabName).classList.add("active");
-    evt.currentTarget.classList.add("active");
-}
-
+/**
+ * MODALES Y GUARDADO
+ */
 function openTaskModal(id = null) {
-    document.getElementById('taskForm').reset();
+    const form = document.getElementById('taskForm');
+    if(!form) return;
+    form.reset();
     document.getElementById('taskId').value = '';
-    document.querySelectorAll('.tab-btn')[0].click(); 
+    
+    const tabs = document.querySelectorAll('.tab-btn');
+    if(tabs.length > 0) tabs[0].click(); 
 
     if (id !== null) {
         const t = dbTasks.find(task => task.id == id);
@@ -245,34 +243,14 @@ function openTaskModal(id = null) {
     document.getElementById('taskModal').classList.add('active');
 }
 
-function closeModal(modalId) { document.getElementById(modalId).classList.remove('active'); }
-
-function showCustomAlert(title, message, type = 'success') {
-    const iconContainer = document.getElementById('alertIcon');
-    const btn = document.getElementById('alertBtn');
-    
-    if (type === 'success') {
-        iconContainer.innerHTML = '<i class="bi bi-check-circle-fill" style="color: #06b6d4;"></i>';
-        btn.style.background = '#06b6d4'; btn.style.color = 'white';
-    } else if (type === 'warning') {
-        iconContainer.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="color: #f59e0b;"></i>';
-        btn.style.background = '#f59e0b'; btn.style.color = 'white';
-    }
-    
-    document.getElementById('alertTitle').innerText = title;
-    document.getElementById('alertMessage').innerText = message;
-    document.getElementById('customAlertModal').classList.add('active');
-}
-
-// === 6. GUARDAR TAREA EN POSTGRES ===
 async function saveTask(e) {
-    e.preventDefault();
+    if(e) e.preventDefault();
     const id = document.getElementById('taskId').value;
     
     let currentStatus = 'Por Hacer';
     if(id) {
-        const existingTask = dbTasks.find(t => t.id == id);
-        if(existingTask) currentStatus = existingTask.status;
+        const existing = dbTasks.find(t => t.id == id);
+        if(existing) currentStatus = existing.status;
     }
 
     const payload = {
@@ -288,13 +266,48 @@ async function saveTask(e) {
         feedback: document.getElementById('taskFeedback').value
     };
 
-    const method = id ? 'PUT' : 'POST';
-    const url = id ? `${API_TASKS}/${id}` : API_TASKS;
-
     try {
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `${API_TASKS}/${id}` : API_TASKS;
         await apiFetch(url, { method, body: JSON.stringify(payload) });
+        
         closeModal('taskModal'); 
         loadAllData(); 
-        showCustomAlert("¡Tarea Guardada!", "La solicitud ha sido registrada y actualizada correctamente.", "success"); 
+        showCustomAlert("¡Logrado!", "Tarea actualizada en el tablero.", "success"); 
     } catch(err) { console.error(err); }
+}
+
+// Helpers UI
+function closeModal(id) { 
+    const el = document.getElementById(id);
+    if(el) el.classList.remove('active'); 
+}
+
+function openRolesModal() { 
+    const el = document.getElementById('rolesModal');
+    if(el) el.classList.add('active'); 
+}
+
+function switchTab(evt, tabName) {
+    if (evt && evt.preventDefault) evt.preventDefault(); 
+    document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+    document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+    const target = document.getElementById(tabName);
+    if(target) target.classList.add("active");
+    if(evt) evt.currentTarget.classList.add("active");
+}
+
+function showCustomAlert(title, message, type = 'success') {
+    const icon = document.getElementById('alertIcon');
+    const btn = document.getElementById('alertBtn');
+    if(!icon || !btn) return;
+
+    icon.innerHTML = type === 'success' 
+        ? '<i class="bi bi-check-circle-fill" style="color: #06b6d4;"></i>' 
+        : '<i class="bi bi-exclamation-triangle-fill" style="color: #f59e0b;"></i>';
+    
+    btn.style.background = type === 'success' ? '#06b6d4' : '#f59e0b';
+    document.getElementById('alertTitle').innerText = title;
+    document.getElementById('alertMessage').innerText = message;
+    document.getElementById('customAlertModal').classList.add('active');
 }
