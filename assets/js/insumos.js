@@ -204,6 +204,15 @@ function renderTable(){
             ? String(r.supply_number).padStart(4, '0') 
             : String(r.id).padStart(4, '0');
 
+        // Lógica de limpieza de unidades para evitar el "1.000"
+        const unitStr = (r.unidad ?? r.unit ?? "").toUpperCase();
+        const isPiece = unitStr.includes('PZA') || unitStr.includes('UNIDAD');
+        
+        // Formateamos el stock: si es pieza, forzamos entero; si no, usamos money()
+        const formattedStock = isPiece 
+            ? Math.floor(Number(r.stock ?? 0)) 
+            : money(r.stock ?? 0);
+
         tr.innerHTML = `
             <td style="padding:15px; font-weight:700; color:#94a3b8;">#${displayNum}</td>
             <td style="padding:15px; font-weight:600; color:#1e293b;">${r.nombre ?? r.name}</td>
@@ -212,23 +221,21 @@ function renderTable(){
             <td style="padding:15px; font-weight:600; color:#475569;">$${money(r.costo ?? r.cost)}</td>
             <td style="padding:15px;">
                 <span class="badge ${low ? 'badge-stock-low' : 'badge-stock-ok'}" style="font-size:0.85rem; padding: 4px 10px; border-radius:8px;">
-                    ${low ? '<i class="bi bi-exclamation-triangle-fill"></i>' : ''} 
-                    ${ (r.unidad?.toUpperCase() === 'UNIDAD' || r.unidad?.toUpperCase() === 'PZA') 
-                        ? Math.floor(r.stock ?? 0) 
-                        : money(r.stock ?? 0) 
-                    } ${(r.unidad ?? r.unit ?? "").toLowerCase()}
+                    ${low ? '<i class="bi bi-exclamation-triangle-fill"></i> ' : ''} 
+                    ${formattedStock} <small style="opacity:0.8;">${unitStr.toLowerCase()}</small>
                 </span>
             </td>
             <td style="padding:15px;">
                 <div class="table-actions" style="display:flex; gap:8px; justify-content:center;">
-                    <button class="btn-icon btn-edit" data-id="${r.id}"><i class="bi bi-pencil-square"></i></button>
-                    <button class="btn-icon btn-del" data-id="${r.id}"><i class="bi bi-trash"></i></button>
+                    <button class="btn-icon btn-edit" data-id="${r.id}" title="Editar"><i class="bi bi-pencil-square"></i></button>
+                    <button class="btn-icon btn-del" data-id="${r.id}" title="Eliminar"><i class="bi bi-trash"></i></button>
                 </div>
             </td>
         `;
         tableBody.appendChild(tr);
     });
 
+    // Reasignar eventos a los nuevos botones
     tableBody.querySelectorAll(".btn-edit").forEach(btn => {
         btn.onclick = () => onEdit(btn.dataset.id);
     });
@@ -275,6 +282,7 @@ async function onSubmit(e){
 function onEdit(id){
     const r = supplies.find(x => Number(x.id) === Number(id));
     if(!r) return;
+    
     modalTitle.textContent = "Editar Insumo";
     inputId.value = r.id;
     inputName.value = r.nombre ?? r.name ?? "";
@@ -282,10 +290,23 @@ function onEdit(id){
     inputSupplier.value = r.proveedor_id ?? r.supplier_id ?? "";
     inputUnit.value = r.unidad ?? r.unit ?? "ML";
     inputCost.value = r.costo ?? r.cost ?? 0;
-    inputStock.value = r.stock ?? 0;
-    inputMinStock.value = r.min_stock ?? r.minStock ?? 0;
+
+    // Al usar Number().toString() eliminamos los .000 que vienen de la DB
+    inputStock.value = Number(r.stock ?? 0).toString();
+    inputMinStock.value = Number(r.min_stock ?? r.minStock ?? 0).toString();
+
+    // ESTO DEBE IR DENTRO DE LA FUNCIÓN onEdit
+    const unitUpper = inputUnit.value.toUpperCase();
+    if (unitUpper.includes('PZA') || unitUpper.includes('UNIDAD')) {
+        inputStock.setAttribute('step', '1');
+        inputMinStock.setAttribute('step', '1');
+    } else {
+        inputStock.setAttribute('step', '0.001');
+        inputMinStock.setAttribute('step', '0.001');
+    }
+    
     openModal();
-}
+} // Aquí es donde realmente cierra la función
 
 async function onDelete(id){
     const ok = await openConfirm({ title: "Eliminar", message: "¿Borrar este insumo?", okText: "Eliminar", okVariant: "danger" });
