@@ -3,7 +3,8 @@
 // =========================
 // API CONFIG
 // =========================
-const SUPPLIERS_API = `${API_BASE}/suppliers`;
+// ✅ CAMBIO: Ruta relativa, delegando la URL base al cerebro de main.js
+const SUPPLIERS_API = "/suppliers";
 
 // =========================
 // ELEMENTOS DEL DOM
@@ -38,6 +39,8 @@ let suppliers = [];
 // =========================
 function safeText(v) { return (v ?? "").toString().trim(); }
 
+// 🗑️ BORRADO: La función apiFetch local con el token viejo fue eliminada.
+
 // =========================
 // MODALES (Confirm & Alert)
 // =========================
@@ -66,43 +69,16 @@ function openModal() { modal?.classList.remove("hidden"); }
 function closeModal() { modal?.classList.add("hidden"); }
 
 // =========================
-// API FETCH CON SEGURIDAD
-// =========================
-async function apiFetch(url, options = {}) {
-    const token = localStorage.getItem("agromedic_token");
-
-    const res = await fetch(url, {
-        headers: { 
-            "Content-Type": "application/json", 
-            "Authorization": `Bearer ${token}`, 
-            ...(options.headers || {}) 
-        },
-        ...options,
-    });
-    
-    let data = null;
-    try { data = await res.json(); } catch {}
-    
-    if (res.status === 401 || res.status === 403) {
-        localStorage.removeItem("agromedic_token");
-        window.location.replace("../pages/login.html");
-        return;
-    }
-
-    if (!res.ok) throw new Error(data?.message || data?.error || `Error HTTP ${res.status}`);
-    return data;
-}
-
-// =========================
 // CARGA DE DATOS
 // =========================
 async function loadSuppliers() {
     try {
-        const json = await apiFetch(SUPPLIERS_API);
-        // El backend ahora envía display_id gracias al ROW_NUMBER()
-        suppliers = json.data || [];
+        const res = await apiFetch(SUPPLIERS_API);
+        // Soporta tanto si el backend manda { data: [...] } como si manda el array directo
+        suppliers = res.data || res || [];
     } catch (err) {
-        openAlert({ title: "Error", message: "No pude cargar los proveedores." });
+        console.error("Error cargando proveedores:", err);
+        openAlert({ title: "Error", message: "No pude cargar la lista de proveedores." });
     }
 }
 
@@ -123,26 +99,32 @@ function renderTable() {
     });
 
     if (!filtered.length) {
-        tableBody.innerHTML = `<tr><td colspan="7" style="padding:20px; text-align:center; color:#64748b;">No se encontraron proveedores con ese criterio.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="7" style="padding:40px; text-align:center; color:#64748b;">No se encontraron proveedores.</td></tr>`;
         return;
     }
 
     filtered.forEach((s) => {
         const tr = document.createElement("tr");
         tr.style.borderBottom = "1px solid #f1f5f9";
+        
+        // Estilos en línea para asegurar que se vea impecable
         tr.innerHTML = `
-            <td style="padding:15px; font-weight:700; color:#94a3b8;">
+            <td style="padding:15px; font-weight:800; color:#94a3b8; vertical-align: middle;">
                 #${s.display_id || s.id}
             </td>
-            <td style="padding:15px; font-weight:600; color:#475569;">${safeText(s.rif) || "---"}</td>
-            <td style="padding:15px; font-weight:700; color:#1e293b;">${safeText(s.nombre)}</td>
-            <td style="padding:15px; color:#475569;">${safeText(s.contacto) || "No asignado"}</td>
-            <td style="padding:15px; color:#475569;"><i class="bi bi-telephone text-soft"></i> ${safeText(s.telefono) || "-"}</td>
-            <td style="padding:15px;"><span class="badge-terms">${safeText(s.condiciones_pago) || "Contado"}</span></td>
-            <td style="padding:15px;">
+            <td style="padding:15px; font-weight:600; color:#475569; vertical-align: middle;">${safeText(s.rif) || "---"}</td>
+            <td style="padding:15px; font-weight:700; color:#1e293b; vertical-align: middle;">${safeText(s.nombre)}</td>
+            <td style="padding:15px; color:#475569; vertical-align: middle;">${safeText(s.contacto) || "No asignado"}</td>
+            <td style="padding:15px; color:#475569; vertical-align: middle;"><i class="bi bi-telephone text-soft"></i> ${safeText(s.telefono) || "-"}</td>
+            <td style="padding:15px; vertical-align: middle;">
+                <span style="background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">
+                    ${safeText(s.condiciones_pago) || "Contado"}
+                </span>
+            </td>
+            <td style="padding:15px; vertical-align: middle; text-align: right;">
                 <div class="table-actions">
-                    <button class="btn-icon btn-edit" data-action="edit" data-id="${s.id}" title="Editar"><i class="bi bi-pencil-square"></i></button>
-                    <button class="btn-icon btn-del" data-action="delete" data-id="${s.id}" title="Eliminar"><i class="bi bi-trash"></i></button>
+                    <button class="btn-icon btn-edit" data-action="edit" data-id="${s.id}" title="Editar" style="border: none; background: transparent; cursor: pointer; color: #3b82f6; font-size: 1.2rem; margin-right: 10px;"><i class="bi bi-pencil-square"></i></button>
+                    <button class="btn-icon btn-del" data-action="delete" data-id="${s.id}" title="Eliminar" style="border: none; background: transparent; cursor: pointer; color: #ef4444; font-size: 1.2rem;"><i class="bi bi-trash"></i></button>
                 </div>
             </td>
         `;
@@ -267,6 +249,12 @@ async function onDelete(id) {
 // INICIALIZACIÓN
 // =========================
 async function init() {
+    // ✅ Control de seguridad estricto
+    if (typeof apiFetch !== "function") {
+        console.error("❌ Error Crítico: main.js no detectado. El módulo de proveedores está bloqueado.");
+        return;
+    }
+
     // Configurar Sidebar/Header si existe la función
     if (typeof setupLayout === 'function') setupLayout();
 

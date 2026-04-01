@@ -1,8 +1,9 @@
 // frontend/assets/js/usuarios.js
 
-const API_USERS = "https://kont-backend-final.onrender.com/api/users";
+// ✅ Ajustado a ruta relativa para consistencia con main.js
+const API_USERS = "/users";
 
-// ---------------- ELEMENTOS ----------------
+// ---------------- ELEMENTOS DEL DOM ----------------
 const tableBody = document.querySelector("#users-table tbody");
 const btnNew = document.getElementById("btn-new-user");
 const searchInput = document.getElementById("search-user");
@@ -17,7 +18,6 @@ const inputEmail = document.getElementById("user-email");
 const inputPassword = document.getElementById("user-password");
 const passwordHint = document.getElementById("password-hint");
 
-// Los nuevos campos mágicos
 const inputCustomTitle = document.getElementById("user-custom-title");
 const inputRole = document.getElementById("user-role");
 const inputIsCoordinator = document.getElementById("user-is-coordinator");
@@ -27,54 +27,34 @@ const btnCancel = document.getElementById("btn-cancel");
 
 let usersList = [];
 
-// ---------------- API FETCH (Con Seguridad VIP) ----------------
-async function apiFetch(url, options = {}) {
-    const token = localStorage.getItem("agromedic_token");
-    
-    const headers = { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` 
-    };
-
-    const res = await fetch(url, { headers, ...options });
-    let data = null;
-    try { data = await res.json(); } catch {}
-    
-    if (res.status === 401 || res.status === 403) {
-        localStorage.removeItem("agromedic_token");
-        window.location.replace("login.html");
-        return;
-    }
-    
-    if (!res.ok) throw new Error(data?.error || `Error HTTP ${res.status}`);
-    return data;
-}
-
 // ---------------- CARGA Y RENDERIZADO ----------------
 async function loadUsers() {
     try {
         const json = await apiFetch(API_USERS);
-        usersList = json.data || [];
+        usersList = json.data || json || [];
         renderTable();
     } catch (err) {
         if(!err.message.includes("404")) {
-            openAlert({ title: "Error", message: "No se pudieron cargar los usuarios: " + err.message });
+            console.error("Error al cargar usuarios:", err);
+            if (typeof openAlert === 'function') {
+                openAlert({ title: "Error", message: "No se pudieron cargar los empleados." });
+            }
         }
     }
 }
 
 function getRoleBadge(role) {
     const map = {
-        "SUPER_ADMIN": { class: "badge-super", text: "Super Admin" },
-        "ADMIN_BRAND": { class: "badge-admin", text: "Administrador" },
-        "SALES": { class: "badge-sales", text: "Ventas" },
-        "FINANCE": { class: "badge-finance", text: "Finanzas" },
-        "MARKETING": { class: "badge-mkt", text: "Marketing" },
-        "INVENTORY": { class: "badge-inv", text: "Almacén" },
-        "HR": { class: "badge-hr", text: "RRHH" }
+        "SUPER_ADMIN": { class: "badge-super", text: "Super Admin", color: "#7c3aed" },
+        "ADMIN_BRAND": { class: "badge-admin", text: "Administrador", color: "#2563eb" },
+        "SALES": { class: "badge-sales", text: "Ventas", color: "#059669" },
+        "FINANCE": { class: "badge-finance", text: "Finanzas", color: "#db2777" },
+        "MARKETING": { class: "badge-mkt", text: "Marketing", color: "#ea580c" },
+        "INVENTORY": { class: "badge-inv", text: "Almacén", color: "#4b5563" },
+        "HR": { class: "badge-hr", text: "RRHH", color: "#0891b2" }
     };
-    const r = map[role] || { class: "badge-admin", text: role };
-    return `<span class="badge ${r.class}">${r.text}</span>`;
+    const r = map[role] || { class: "badge-admin", text: role, color: "#64748b" };
+    return `<span class="badge" style="background: ${r.color}20; color: ${r.color}; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">${r.text}</span>`;
 }
 
 function renderTable(filterText = "") {
@@ -89,76 +69,71 @@ function renderTable(filterText = "") {
     );
 
     if (!filtered.length) {
-        tableBody.innerHTML = `<tr><td colspan="5" style="padding:20px; text-align:center; color:#64748b;">No se encontraron empleados.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="5" style="padding:40px; text-align:center; color:#94a3b8;">No se encontraron empleados con ese criterio.</td></tr>`;
         return;
     }
 
-    const currentUser = JSON.parse(localStorage.getItem("agromedic_user") || "{}");
+    // ✅ Actualizado a kont_user
+    const currentUser = JSON.parse(localStorage.getItem("kont_user") || "{}");
 
     filtered.forEach((u) => {
         const tr = document.createElement("tr");
         tr.style.borderBottom = "1px solid #f1f5f9";
         
         const statusBadge = u.is_active 
-            ? `<span style="color:#16a34a; font-weight:600; font-size:0.9rem;"><i class="bi bi-circle-fill" style="font-size:8px; margin-right:5px;"></i> Activo</span>`
-            : `<span class="badge badge-inactive">Inactivo</span>`;
+            ? `<span style="color:#16a34a; font-weight:600; font-size:0.85rem;"><i class="bi bi-circle-fill" style="font-size:7px; margin-right:5px;"></i> Activo</span>`
+            : `<span style="color:#ef4444; font-weight:600; font-size:0.85rem;"><i class="bi bi-circle-fill" style="font-size:7px; margin-right:5px;"></i> Inactivo</span>`;
 
-        // Estrellita para los coordinadores
         const coordBadge = u.is_coordinator 
-            ? `<span class="badge badge-coord" title="Coordinador de Área"><i class="bi bi-star-fill"></i> Coord</span>` 
+            ? `<span title="Coordinador de Área" style="margin-left:5px; color:#f59e0b;"><i class="bi bi-star-fill"></i></span>` 
             : '';
 
         const isMe = Number(u.id) === Number(currentUser.id);
-        const actionButtons = isMe 
-            ? `<span style="color:#94a3b8; font-size:0.85rem;">(Tú)</span>`
-            : `
-                <button class="btn-icon btn-edit" data-action="edit" data-id="${u.id}" title="Editar"><i class="bi bi-pencil-square"></i></button>
-                <button class="btn-icon btn-del" data-action="delete" data-id="${u.id}" title="${u.is_active ? 'Desactivar' : 'Activar'}"><i class="bi bi-power"></i></button>
-              `;
-
-        // Asegúrate de que el primer TD tenga esta estructura en tu renderTable:
-tr.innerHTML = `
-    <td style="padding:15px; font-weight:600; color:#1e293b;">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:35px; height:35px; flex-shrink:0; background:#e2e8f0; border-radius:50%; display:flex; justify-content:center; align-items:center; color:#475569; font-weight:bold; font-size:0.9rem;">
-                ${(u.name || "U").charAt(0).toUpperCase()}
-            </div>
-            <div style="overflow: hidden;">
-                <span style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${u.name}</span>
-                <span style="font-size: 0.75rem; color: #94a3b8; font-weight: normal; display: block;">${u.email}</span>
-            </div>
-        </div>
-    </td>
-    <td style="padding:15px; color:#475569; font-weight: 600;">${u.custom_title || "Sin cargo"}</td>
-    <td style="padding:15px;">${getRoleBadge(u.role)} ${coordBadge}</td>
-    <td style="padding:15px;">${statusBadge}</td>
-    <td style="padding:15px;">
-        <div class="table-actions">${actionButtons}</div>
-    </td>
-`;
+        
+        tr.innerHTML = `
+            <td style="padding:15px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:38px; height:38px; flex-shrink:0; background:#f1f5f9; border: 2px solid #e2e8f0; border-radius:10px; display:flex; justify-content:center; align-items:center; color:#475569; font-weight:800; font-size:1rem;">
+                        ${(u.name || "U").charAt(0).toUpperCase()}
+                    </div>
+                    <div style="line-height: 1.2;">
+                        <span style="display: block; font-weight:700; color:#1e293b;">${u.name} ${isMe ? '<small style="color:#94a3b8; font-weight:400;">(Tú)</small>' : ''}</span>
+                        <span style="font-size: 0.75rem; color: #64748b;">${u.email}</span>
+                    </div>
+                </div>
+            </td>
+            <td style="padding:15px; color:#475569; font-weight: 600; font-size: 0.9rem;">${u.custom_title || "Sin cargo"}</td>
+            <td style="padding:15px;">${getRoleBadge(u.role)} ${coordBadge}</td>
+            <td style="padding:15px;">${statusBadge}</td>
+            <td style="padding:15px; text-align: right;">
+                <div class="table-actions">
+                    <button class="btn-icon btn-edit" data-action="edit" data-id="${u.id}" style="border:none; background:none; cursor:pointer; color:#3b82f6; font-size:1.1rem; margin-right:8px;"><i class="bi bi-pencil-square"></i></button>
+                    ${!isMe ? `<button class="btn-icon btn-del" data-action="toggle" data-id="${u.id}" style="border:none; background:none; cursor:pointer; color:${u.is_active ? '#ef4444' : '#10b981'}; font-size:1.1rem;"><i class="bi bi-power"></i></button>` : ''}
+                </div>
+            </td>
+        `;
         tableBody.appendChild(tr);
     });
 
+    // Event Listeners Delegados
     tableBody.querySelectorAll("button[data-action]").forEach((btn) => {
-        btn.addEventListener("click", () => {
+        btn.onclick = () => {
             const action = btn.getAttribute("data-action");
             const id = btn.getAttribute("data-id");
             if (action === "edit") onEdit(id);
-            if (action === "delete") onToggleActive(id);
-        });
+            if (action === "toggle") onToggleActive(id);
+        };
     });
 }
 
-// ---------------- FORMULARIO ----------------
+// ---------------- LÓGICA DEL FORMULARIO ----------------
 function resetForm() {
     modalTitle.textContent = "Registrar Empleado";
     form.reset();
     inputId.value = "";
     inputPassword.required = true;
-    passwordHint.textContent = "(Obligatorio)";
-    inputCustomTitle.value = "";
-    inputIsCoordinator.checked = false;
-    coordinatorWrap.style.display = "flex"; // Lo mostramos por defecto
+    if (passwordHint) passwordHint.textContent = "(Mínimo 6 caracteres)";
+    if (coordinatorWrap) coordinatorWrap.style.display = "flex";
 }
 
 function onEdit(id) {
@@ -170,45 +145,41 @@ function onEdit(id) {
     inputName.value = u.name;
     inputEmail.value = u.email;
     inputRole.value = u.role;
-    
-    // Llenamos los campos nuevos
     inputCustomTitle.value = u.custom_title || "";
     inputIsCoordinator.checked = !!u.is_coordinator;
 
-    // Si es Administrador, ocultamos lo de coordinador porque no tiene sentido (el admin ya ve todo)
-    if (u.role === "ADMIN_BRAND") {
-        coordinatorWrap.style.display = "none";
-    } else {
-        coordinatorWrap.style.display = "flex";
+    // Lógica de visibilidad para Admin
+    if (coordinatorWrap) {
+        coordinatorWrap.style.display = (u.role === "ADMIN_BRAND") ? "none" : "flex";
     }
     
     inputPassword.value = "";
     inputPassword.required = false;
-    passwordHint.textContent = "(Déjalo en blanco para no cambiarla)";
+    if (passwordHint) passwordHint.textContent = "(Déjalo en blanco para mantener la actual)";
     
     openModal();
 }
 
-// Esconder/Mostrar el switch de coordinador si cambian a "Administrador"
 inputRole?.addEventListener("change", (e) => {
-    if (e.target.value === "ADMIN_BRAND") {
-        coordinatorWrap.style.display = "none";
-        inputIsCoordinator.checked = true; // Por defecto el admin tiene los poderes
-    } else {
-        coordinatorWrap.style.display = "flex";
+    if (coordinatorWrap) {
+        if (e.target.value === "ADMIN_BRAND") {
+            coordinatorWrap.style.display = "none";
+            inputIsCoordinator.checked = true; 
+        } else {
+            coordinatorWrap.style.display = "flex";
+        }
     }
 });
 
-// NUEVO: Protección contra doble clic
 async function onSubmit(e) {
     e.preventDefault();
     
-    // 1. Capturamos el botón y lo bloqueamos
     const btnSubmit = form.querySelector("button[type='submit']");
-    const originalText = btnSubmit.innerHTML; 
+    const originalText = btnSubmit.innerHTML;
+    
+    // 🛡️ Protección anti-spam
     btnSubmit.disabled = true;
-    btnSubmit.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando...';
-    btnSubmit.style.opacity = "0.7";
+    btnSubmit.innerHTML = '<i class="bi bi-hourglass-split"></i> Procesando...';
 
     const id = inputId.value;
     const payload = {
@@ -226,20 +197,24 @@ async function onSubmit(e) {
     try {
         if (!id) {
             await apiFetch(API_USERS, { method: "POST", body: JSON.stringify(payload) });
-            openAlert({ title: "¡Éxito!", message: "Empleado registrado correctamente." });
         } else {
             await apiFetch(`${API_USERS}/${id}`, { method: "PUT", body: JSON.stringify(payload) });
-            openAlert({ title: "Actualizado", message: "Los datos se guardaron correctamente." });
         }
+        
         await loadUsers();
         closeModal();
+        if (typeof openAlert === 'function') {
+            openAlert({ title: "Éxito", message: "Información actualizada correctamente." });
+        }
     } catch (err) { 
-        openAlert({ title: "Error", message: err.message }); 
+        if (typeof openAlert === 'function') {
+            openAlert({ title: "Error", message: err.message }); 
+        } else {
+            alert(err.message);
+        }
     } finally {
-        // 2. Pase lo que pase (éxito o error), volvemos a encender el botón
         btnSubmit.disabled = false;
         btnSubmit.innerHTML = originalText;
-        btnSubmit.style.opacity = "1";
     }
 }
 
@@ -248,14 +223,16 @@ async function onToggleActive(id) {
     if (!u) return;
 
     const actionText = u.is_active ? "desactivar" : "reactivar";
-    const ok = await openConfirm({ 
-        title: "¿Estás segura?", 
-        message: `Vas a ${actionText} el acceso de ${u.name}.`, 
-        okText: "Sí, continuar", 
-        okVariant: u.is_active ? "danger" : "primary" 
-    });
     
-    if (!ok) return;
+    if (typeof openConfirm === 'function') {
+        const ok = await openConfirm({ 
+            title: "¿Confirmar cambio?", 
+            message: `Vas a ${actionText} el acceso de ${u.name}.`, 
+            okText: `Sí, ${actionText}`, 
+            okVariant: u.is_active ? "danger" : "primary" 
+        });
+        if (!ok) return;
+    }
 
     try {
         await apiFetch(`${API_USERS}/${id}`, { 
@@ -263,39 +240,28 @@ async function onToggleActive(id) {
             body: JSON.stringify({ is_active: !u.is_active }) 
         });
         await loadUsers();
-    } catch (err) { openAlert({ title: "Error", message: err.message }); }
+    } catch (err) { 
+        console.error(err);
+    }
 }
 
 // ---------------- UI & EVENTOS ----------------
 function openModal() { modal?.classList.remove("hidden"); }
 function closeModal() { modal?.classList.add("hidden"); }
 
-let confirmResolver = null;
-function openConfirm({ title, message, okText, okVariant }) {
-    document.getElementById("confirm-title").textContent = title;
-    document.getElementById("confirm-message").textContent = message;
-    const btn = document.getElementById("confirm-ok");
-    btn.textContent = okText;
-    btn.className = `btn-${okVariant}`;
-    document.getElementById("confirm-modal").classList.remove("hidden");
-    return new Promise((res) => { confirmResolver = res; });
-}
-function closeConfirm() { document.getElementById("confirm-modal").classList.add("hidden"); }
-document.getElementById("confirm-ok")?.addEventListener("click", () => { confirmResolver?.(true); closeConfirm(); });
-document.getElementById("confirm-cancel")?.addEventListener("click", () => { confirmResolver?.(false); closeConfirm(); });
-
-function openAlert({ title, message }) {
-    document.getElementById("alert-title").textContent = title;
-    document.getElementById("alert-message").textContent = message;
-    document.getElementById("alert-modal").classList.remove("hidden");
-}
-document.getElementById("alert-ok")?.addEventListener("click", () => { document.getElementById("alert-modal").classList.add("hidden"); });
-
-// INICIO
+// INICIALIZACIÓN
 document.addEventListener("DOMContentLoaded", () => {
+    if (typeof apiFetch !== "function") {
+        console.error("❌ Error: main.js no detectado.");
+        return;
+    }
+    
     loadUsers();
     btnNew?.addEventListener("click", () => { resetForm(); openModal(); });
     btnCancel?.addEventListener("click", closeModal);
     form?.addEventListener("submit", onSubmit);
-    searchInput?.addEventListener("input", (e) => renderTable(e.target.value));
+    
+    searchInput?.addEventListener("input", (e) => {
+        renderTable(e.target.value);
+    });
 });

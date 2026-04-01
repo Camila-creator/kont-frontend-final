@@ -1,41 +1,49 @@
 /* =========================================================
-   DASHBOARD FINANCIERO JS (CFO LEVEL) - CONECTADO A BD REAL
+   DASHBOARD FINANCIERO JS (CFO LEVEL) - KONT
    ========================================================= */
-const API_FINANCE = "https://kont-backend-final.onrender.com/api/finance/dashboard";
+
+// ✅ Ruta relativa para coherencia con main.js
+const API_FINANCE = "/finance/dashboard";
 let chartMethodsInstance = null;
 
-document.addEventListener("DOMContentLoaded", () => { loadFinanceDashboard(); });
+document.addEventListener("DOMContentLoaded", () => { 
+    // Inicialización con seguridad
+    if (typeof apiFetch !== 'function') {
+        console.error("Error: main.js no cargado. Las funciones financieras fallarán.");
+    }
+    loadFinanceDashboard(); 
 
-// === API FETCH CON GAFETE SAAS ===
-async function apiFetch(url, options = {}) {
-    const token = localStorage.getItem("agromedic_token");
-    const res = await fetch(url, { 
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}`, ...(options.headers || {}) },
-        ...options
-    });
-    
-    if (res.status === 401 || res.status === 403) { localStorage.removeItem("agromedic_token"); window.location.replace("../pages/login.html"); return; }
-    
-    const data = await res.json().catch(() => null);
-    if (!res.ok) throw new Error(data?.message || data?.error || `Error de conexión ${res.status}`);
-    return data;
-}
+    // Listener para el filtro de tiempo (Hoy, Mes, Año)
+    const timeFilter = document.getElementById("timeFilter");
+    timeFilter?.addEventListener("change", loadFinanceDashboard);
+});
 
+// === CARGA DE DATOS PRINCIPAL ===
 async function loadFinanceDashboard() {
-    const filter = document.getElementById("timeFilter").value;
+    const filter = document.getElementById("timeFilter")?.value || 'month';
+    
     try {
+        // Mostramos un estado de carga opcional si tienes spinners
         const data = await apiFetch(`${API_FINANCE}?filter=${filter}`);
-        if(data) { 
-            renderKPIs(data.kpis); 
-            renderAccounts(data.accounts); 
-            renderChartMethods(data.methodsIn); 
-            renderMuro(data.muro); 
+        
+        if (data) { 
+            renderKPIs(data.kpis || {}); 
+            renderAccounts(data.accounts || []); 
+            renderChartMethods(data.methodsIn || []); 
+            renderMuro(data.muro || {}); 
         }
-    } catch (err) { console.error("Error cargando dashboard financiero:", err); }
+    } catch (err) { 
+        console.error("Error cargando dashboard financiero:", err);
+        // Podrías disparar un openAlert aquí si falla la conexión crítica
+    }
 }
 
+// === RENDERIZADO DE INDICADORES (KPIs) ===
 function renderKPIs(kpis) {
-    const liquidez = kpis.liquidez || 0; const ingresos = kpis.ingresos || 0; const egresos = kpis.egresos || 0; const cxc = kpis.cxc || 0; const cxp = kpis.cxp || 0; const gastoMkt = kpis.gasto_mkt || 0;
+    const { 
+        liquidez = 0, ingresos = 0, egresos = 0, 
+        cxc = 0, cxp = 0, gasto_mkt = 0 
+    } = kpis;
     
     const elLiquidez = document.getElementById("kpi-liquidez");
     const subLiq = document.getElementById("kpi-liquidez-sub");
@@ -43,33 +51,68 @@ function renderKPIs(kpis) {
     const elCxp = document.getElementById("kpi-cxp");
     const elMkt = document.getElementById("kpi-mkt");
 
-    if (elLiquidez) elLiquidez.innerText = `$ ${liquidez.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    // Formateador de moneda para limpieza visual
+    const fmt = (val) => `$ ${Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    if (elLiquidez) elLiquidez.innerText = fmt(liquidez);
     
     if (subLiq) {
-        subLiq.innerHTML = `<div style="display: flex; gap: 10px; font-size: 0.85rem; margin-top: 5px;"><span style="color: #059669; background: #dcfce7; padding: 4px 8px; border-radius: 6px; border: 1px solid #bbf7d0;"><i class="bi bi-arrow-down-circle-fill"></i> In: $${ingresos.toLocaleString('en-US')}</span><span style="color: #dc2626; background: #fee2e2; padding: 4px 8px; border-radius: 6px; border: 1px solid #fecaca;"><i class="bi bi-arrow-up-circle-fill"></i> Out: $${egresos.toLocaleString('en-US')}</span></div>`;
-        subLiq.className = ""; 
+        subLiq.innerHTML = `
+            <div style="display: flex; gap: 8px; font-size: 0.75rem; margin-top: 8px; font-weight: 600;">
+                <span style="color: #059669; background: #f0fdf4; padding: 4px 10px; border-radius: 20px; border: 1px solid #dcfce7;">
+                    <i class="bi bi-arrow-down-left"></i> In: $${Number(ingresos).toLocaleString('en-US')}
+                </span>
+                <span style="color: #dc2626; background: #fef2f2; padding: 4px 10px; border-radius: 20px; border: 1px solid #fee2e2;">
+                    <i class="bi bi-arrow-up-right"></i> Out: $${Number(egresos).toLocaleString('en-US')}
+                </span>
+            </div>`;
     }
     
-    if (elCxc) elCxc.innerText = `$ ${cxc.toLocaleString('en-US', {minimumFractionDigits: 2})}`; 
-    if (elCxp) elCxp.innerText = `$ ${cxp.toLocaleString('en-US', {minimumFractionDigits: 2})}`; 
-    if (elMkt) elMkt.innerText = `$ ${gastoMkt.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    if (elCxc) elCxc.innerText = fmt(cxc); 
+    if (elCxp) elCxp.innerText = fmt(cxp); 
+    if (elMkt) elMkt.innerText = fmt(gasto_mkt);
 }
 
+// === RENDERIZADO DE CUENTAS BANCARIAS ===
 function renderAccounts(accounts) {
     const container = document.getElementById("accounts-container"); 
     if (!container) return;
 
     container.innerHTML = "";
-    if (!accounts || accounts.length === 0) { container.innerHTML = `<p style="text-align:center; color:#9ca3af; font-size:0.9rem; margin-top:20px;">No hay cuentas activas.</p>`; return; }
+    if (accounts.length === 0) { 
+        container.innerHTML = `
+            <div style="text-align:center; padding: 30px; color:#94a3b8;">
+                <i class="bi bi-wallet2" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                <p style="font-size:0.85rem;">No hay cuentas configuradas.</p>
+            </div>`; 
+        return; 
+    }
     
     accounts.forEach(acc => {
-        const isDefault = acc.is_default ? `<span class="acc-badge">DEFAULT</span>` : ''; 
-        const icon = acc.name.toLowerCase().includes('zelle') ? 'bi-currency-dollar' : 'bi-bank2'; 
-        const balance = acc.balance || 0;
-        container.innerHTML += `<div class="account-item"><div class="acc-info"><h4><i class="bi ${icon}" style="color:#6b7280;"></i> ${acc.name} ${isDefault}</h4><p>${acc.bank || 'Sin banco'} • ${acc.currency}</p></div><div class="acc-balance">$ ${balance.toLocaleString('en-US', {minimumFractionDigits: 2})}</div></div>`;
+        const isDefault = acc.is_default ? `<span style="background: #e0e7ff; color: #4338ca; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; vertical-align: middle;">DEFAULT</span>` : ''; 
+        const nameLower = acc.name.toLowerCase();
+        
+        // Iconografía dinámica por tipo de cuenta
+        let icon = 'bi-bank';
+        if (nameLower.includes('zelle') || nameLower.includes('cash') || nameLower.includes('efectivo')) icon = 'bi-currency-dollar';
+        if (nameLower.includes('pago movil')) icon = 'bi-phone-vibrate';
+
+        container.innerHTML += `
+            <div class="account-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #f1f5f9;">
+                <div class="acc-info">
+                    <h4 style="margin: 0; font-size: 0.9rem; color: #1e293b;">
+                        <i class="bi ${icon}" style="color:#64748b; margin-right: 8px;"></i>${acc.name}${isDefault}
+                    </h4>
+                    <p style="margin: 0; font-size: 0.75rem; color: #64748b;">${acc.bank || 'Institución'} • ${acc.currency || 'USD'}</p>
+                </div>
+                <div class="acc-balance" style="font-weight: 700; color: #1e293b; font-size: 0.95rem;">
+                    $ ${(acc.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </div>
+            </div>`;
     });
 }
 
+// === GRÁFICO DE MÉTODOS DE PAGO (DONA) ===
 function renderChartMethods(methods) {
     const canvas = document.getElementById('chartMethodsIn');
     if (!canvas) return;
@@ -77,36 +120,59 @@ function renderChartMethods(methods) {
     const ctx = canvas.getContext('2d'); 
     if (chartMethodsInstance) chartMethodsInstance.destroy();
     
-    const validMethods = (methods || []).filter(m => m.total > 0); 
-    const labels = validMethods.length > 0 ? validMethods.map(m => m.method || 'Otros') : ['Sin ingresos']; 
-    const data = validMethods.length > 0 ? validMethods.map(m => m.total) : [1]; 
-    const colors = validMethods.length > 0 ? ['#059669', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444'] : ['#e5e7eb'];
+    const validMethods = methods.filter(m => m.total > 0); 
+    
+    // Si no hay datos, mostramos un gráfico gris de "Empty State"
+    const labels = validMethods.length > 0 ? validMethods.map(m => m.method || 'Otros') : ['Sin datos']; 
+    const dataValues = validMethods.length > 0 ? validMethods.map(m => m.total) : [1]; 
+    const colors = validMethods.length > 0 
+        ? ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'] 
+        : ['#f1f5f9'];
     
     chartMethodsInstance = new Chart(ctx, { 
         type: 'doughnut', 
-        data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 2, borderColor: '#ffffff', hoverOffset: validMethods.length > 0 ? 5 : 0 }] }, 
-        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { usePointStyle: true, padding: 20 } }, tooltip: { callbacks: { label: function(context) { if (validMethods.length === 0) return ' Sin datos en este periodo'; return ' $' + context.parsed.toLocaleString('en-US'); } } } } } 
+        data: { 
+            labels: labels, 
+            datasets: [{ 
+                data: dataValues, 
+                backgroundColor: colors, 
+                borderWidth: 2, 
+                borderColor: '#ffffff' 
+            }] 
+        }, 
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            cutout: '75%', 
+            plugins: { 
+                legend: { 
+                    position: 'bottom', 
+                    labels: { usePointStyle: true, boxWidth: 8, font: { size: 11, family: 'Inter' } } 
+                }, 
+                tooltip: { 
+                    enabled: validMethods.length > 0,
+                    callbacks: { 
+                        label: (context) => ` $${context.parsed.toLocaleString('en-US')}` 
+                    } 
+                } 
+            } 
+        } 
     });
 }
 
+// === EL MURO DE LA VERDAD (MEJORES Y PEORES) ===
 function renderMuro(muro) {
     if(!muro) return;
     
-    const topCliName = document.getElementById("top-cliente-name");
-    const topCliVal = document.getElementById("top-cliente-val");
-    const badCliName = document.getElementById("bad-cliente-name");
-    const badCliVal = document.getElementById("bad-cliente-val");
-    const topProvName = document.getElementById("top-prov-name");
-    const topProvVal = document.getElementById("top-prov-val");
-    const badProvName = document.getElementById("bad-prov-name");
-    const badProvVal = document.getElementById("bad-prov-val");
+    const setMuroText = (idName, idVal, person) => {
+        const elName = document.getElementById(idName);
+        const elVal = document.getElementById(idVal);
+        if (elName) elName.innerText = person?.nombre || 'N/A';
+        if (elVal) elVal.innerText = person ? `$ ${Number(person.monto).toLocaleString('en-US')}` : '--';
+    };
 
-    if (topCliName) topCliName.innerText = muro.mejor_cliente?.nombre || 'N/A'; 
-    if (topCliVal) topCliVal.innerText = `$ ${(muro.mejor_cliente?.monto || 0).toLocaleString('en-US')} Comprados`;
-    if (badCliName) badCliName.innerText = muro.deudor_cliente?.nombre || 'N/A'; 
-    if (badCliVal) badCliVal.innerText = `$ ${(muro.deudor_cliente?.monto || 0).toLocaleString('en-US')} En deuda`;
-    if (topProvName) topProvName.innerText = muro.mejor_proveedor?.nombre || 'N/A'; 
-    if (topProvVal) topProvVal.innerText = `$ ${(muro.mejor_proveedor?.monto || 0).toLocaleString('en-US')} Comprados`;
-    if (badProvName) badProvName.innerText = muro.deudor_proveedor?.nombre || 'N/A'; 
-    if (badProvVal) badProvVal.innerText = `$ ${(muro.deudor_proveedor?.monto || 0).toLocaleString('en-US')} Por pagar`;
+    setMuroText("top-cliente-name", "top-cliente-val", muro.mejor_cliente);
+    setMuroText("bad-cliente-name", "bad-cliente-val", muro.deudor_cliente);
+    setMuroText("top-prov-name", "top-prov-val", muro.mejor_proveedor);
+    setMuroText("bad-prov-name", "bad-prov-val", muro.deudor_proveedor);
 }
