@@ -39,6 +39,12 @@ const inputNewCatColor = document.getElementById("new-cat-color");
 const btnCatSave = document.getElementById("btn-cat-save");
 const btnCatCancel = document.getElementById("btn-cat-cancel");
 
+// Gestión de Categorías (Modal y Elementos)
+const btnManageCategories = document.getElementById("btn-manage-categories");
+const manageCatModal = document.getElementById("manage-cat-modal");
+const manageCatList = document.getElementById("manage-cat-list");
+const btnCloseManageCat = document.getElementById("btn-close-manage-cat");
+
 // ---------------- ESTADO LOCAL ----------------
 let supplies = [];
 let suppliers = [];
@@ -46,7 +52,6 @@ let categories = [];
 let confirmResolver = null;
 
 // ---------------- HELPERS LOCALES ----------------
-
 function getCategoryBadge(categoryId, categoryName){
     const cat = categories.find(c => Number(c.id) === Number(categoryId));
     const color = cat ? cat.color : "#64748b"; 
@@ -121,6 +126,7 @@ async function loadCategories(){
     const json = await apiFetch(API_CATEGORIES);
     categories = json.data || [];
     fillCategorySelects();
+    renderManageCategories(); // Actualiza la lista de gestión de categorías si está abierta
 }
 
 async function loadSupplies(){
@@ -176,7 +182,6 @@ function renderTable(){
         const name = (r.nombre ?? r.name ?? "").toString().toLowerCase();
         const categoryId = String(r.category_id ?? r.categoria_id ?? "");
         const supplierId = String(r.proveedor_id ?? r.supplier_id ?? "");
-        // Nueva lógica: permitir buscar por el número formateado (ej: 0005)
         const sNum = (r.supply_number ?? r.id ?? "").toString();
 
         const matchQ = !q || name.includes(q) || sNum.includes(q);
@@ -195,7 +200,6 @@ function renderTable(){
         const tr = document.createElement("tr");
         tr.style.borderBottom = "1px solid #f1f5f9";
         
-        // Formatear el número correlativo (000X)
         const displayNum = r.supply_number 
             ? String(r.supply_number).padStart(4, '0') 
             : String(r.id).padStart(4, '0');
@@ -209,10 +213,10 @@ function renderTable(){
             <td style="padding:15px;">
                 <span class="badge ${low ? 'badge-stock-low' : 'badge-stock-ok'}" style="font-size:0.85rem; padding: 4px 10px; border-radius:8px;">
                     ${low ? '<i class="bi bi-exclamation-triangle-fill"></i>' : ''} 
-${ (r.unidad?.toUpperCase() === 'UNIDAD' || r.unidad?.toUpperCase() === 'PZA') 
-    ? Math.floor(r.stock ?? 0) 
-    : money(r.stock ?? 0) 
-} ${(r.unidad ?? r.unit ?? "").toLowerCase()}
+                    ${ (r.unidad?.toUpperCase() === 'UNIDAD' || r.unidad?.toUpperCase() === 'PZA') 
+                        ? Math.floor(r.stock ?? 0) 
+                        : money(r.stock ?? 0) 
+                    } ${(r.unidad ?? r.unit ?? "").toLowerCase()}
                 </span>
             </td>
             <td style="padding:15px;">
@@ -311,6 +315,61 @@ async function saveQuickCategory() {
     } catch (err) { openAlert({ message: err.message }); }
 }
 
+// ---------------- GESTIÓN DE CATEGORÍAS (ELIMINAR) ----------------
+
+function renderManageCategories() {
+    if (!manageCatList) return;
+    manageCatList.innerHTML = "";
+
+    if (categories.length === 0) {
+        manageCatList.innerHTML = `<li style="color:#64748b; text-align:center; padding:10px;">No hay categorías.</li>`;
+        return;
+    }
+
+    categories.forEach(c => {
+        const li = document.createElement("li");
+        li.style = "display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f1f5f9;";
+        
+        li.innerHTML = `
+            <span style="display:flex; align-items:center; gap:8px; font-weight:600; color:#334155;">
+                <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${c.color}"></span>
+                ${c.name}
+            </span>
+            <button type="button" class="btn-icon btn-del text-red-500 hover:bg-red-50" style="padding:6px; border-radius:6px;" onclick="deleteCategory(${c.id}, '${c.name}')">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+        manageCatList.appendChild(li);
+    });
+}
+
+// Función global para que funcione el onclick del HTML generado
+window.deleteCategory = async function(id, name) {
+    const ok = await openConfirm({ 
+        title: "Eliminar Categoría", 
+        message: `¿Estás segura de borrar la categoría "${name}"?`, 
+        okText: "Eliminar", 
+        okVariant: "danger" 
+    });
+    
+    if (!ok) return;
+
+    try {
+        await apiFetch(`${API_CATEGORIES}/${id}`, { method: "DELETE" });
+        await loadCategories(); // Recarga las categorías (selects y modal)
+        await loadSupplies();   // Recarga la tabla por si afectó algo
+    } catch (err) {
+        if (err.message.toLowerCase().includes("foreign key") || err.message.toLowerCase().includes("llave foránea")) {
+            openAlert({ 
+                title: "No se puede eliminar", 
+                message: `La categoría "${name}" está siendo usada por uno o más insumos. Reasígnalos o elimínalos primero.` 
+            });
+        } else {
+            openAlert({ title: "Error", message: err.message });
+        }
+    }
+};
+
 // ---------------- INICIALIZACIÓN ----------------
 async function init(){
     try {
@@ -325,6 +384,8 @@ async function init(){
         openModal(); 
     });
     btnCancel?.addEventListener("click", closeModal);
+    
+    // Listeners Modal Nueva Categoría
     btnQuickCategory?.addEventListener("click", () => {
         inputNewCatName.value = "";
         catModal.classList.remove("hidden");
@@ -332,6 +393,16 @@ async function init(){
     });
     btnCatSave?.addEventListener("click", saveQuickCategory);
     btnCatCancel?.addEventListener("click", () => catModal.classList.add("hidden"));
+
+    // Listeners Modal Gestionar Categorías
+    btnManageCategories?.addEventListener("click", () => {
+        renderManageCategories();
+        if(manageCatModal) manageCatModal.classList.remove("hidden");
+    });
+    btnCloseManageCat?.addEventListener("click", () => {
+        if(manageCatModal) manageCatModal.classList.add("hidden");
+    });
+
     form?.addEventListener("submit", onSubmit);
     inputSearch?.addEventListener("input", renderTable);
     filterCategory?.addEventListener("change", renderTable);

@@ -420,6 +420,23 @@
   </div>
 </div>
 
+<button type="button" id="btn-manage-categories" class="btn-secondary" style="margin-top: 8px;">
+    <i class="bi bi-gear"></i> Gestionar Categorías
+</button>
+
+<div id="manage-cat-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="z-index: 2500;">
+    <div class="bg-white p-6 rounded-lg w-96 shadow-xl">
+        <h3 class="text-lg font-bold mb-4 text-slate-800">Gestionar Categorías</h3>
+        
+        <ul id="manage-cat-list" class="mb-4 max-h-60 overflow-y-auto pr-2">
+            </ul>
+
+        <div class="flex justify-end mt-4">
+            <button type="button" id="btn-close-manage-cat" class="btn-secondary">Cerrar</button>
+        </div>
+    </div>
+</div>
+
 <script src="../assets/js/main.js"></script>
 <script src="../assets/js/insumos.js"></script>
 </body>
