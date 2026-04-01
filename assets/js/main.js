@@ -59,32 +59,73 @@ async function apiFetch(endpoint, options = {}) {
 
   try {
     const response = await fetch(url, defaultOptions);
-    
-    // Si el token expiró (401)
+
+    // 401 — token expirado: intentar renovar con refreshToken antes de botar
     if (response.status === 401 && !window.location.pathname.includes("login.html")) {
+      const refreshToken = localStorage.getItem("agromedic_refresh_token");
+
+      if (refreshToken) {
+        try {
+          const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken }),
+          });
+
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            // Guardar el nuevo access token
+            localStorage.setItem("agromedic_token", refreshData.token);
+
+            // Reintentar la petición original con el nuevo token
+            const retryOptions = {
+              ...defaultOptions,
+              headers: {
+                ...defaultOptions.headers,
+                "Authorization": `Bearer ${refreshData.token}`,
+              },
+            };
+            const retryResponse = await fetch(url, retryOptions);
+
+            // Si el reintento falla también, botar al login
+            if (retryResponse.status === 401) {
+              localStorage.clear();
+              window.location.replace("login.html");
+              return;
+            }
+
+            const retryData = await retryResponse.json().catch(() => null);
+            if (!retryResponse.ok) throw new Error(retryData?.error || `Error HTTP ${retryResponse.status}`);
+            return retryData;
+          }
+        } catch (refreshErr) {
+          console.warn("No se pudo renovar el token:", refreshErr.message);
+        }
+      }
+
+      // Si no hay refreshToken o falló la renovación → login
       localStorage.clear();
       window.location.replace("login.html");
       return;
     }
 
-    // SI EL BACKEND BLOQUEA EL MÓDULO (403)
+    // 403 — sin permisos: no botar al login, solo advertir
     if (response.status === 403) {
-        const errorData = await response.json().catch(() => ({}));
-        console.warn("🚫 Permiso insuficiente para esta acción:", errorData.message);
-        
-        // Retornamos un objeto de error controlado en lugar de lanzar una excepción
-        // para que funciones como refreshHeaderAlerts puedan manejarlo en paz.
-        return { error: 'FORBIDDEN', message: errorData.message };
+      const errorData = await response.json().catch(() => ({}));
+      console.warn("Permiso insuficiente:", errorData.message);
+      return { error: "FORBIDDEN", message: errorData.message };
     }
+
     const data = await response.json().catch(() => null);
     if (!response.ok) throw new Error(data?.error || data?.message || `Error HTTP ${response.status}`);
-    
+
     return data;
   } catch (err) {
     console.error("Error en apiFetch:", err);
     throw err;
   }
 }
+
 
 // =========================================================
 // 3. CARGA DE COMPONENTES (Layout)

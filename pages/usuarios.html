@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Usuarios | Kont Admin </title>
+  <title>Usuarios | Kont Admin</title>
   <link rel="stylesheet" href="../assets/css/main.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
@@ -42,11 +42,9 @@
     .btn-del { background: #ef4444; } .btn-del:hover { background: #dc2626; }
 
     @media (max-width: 768px) {
-    /* Ajustes de la barra superior */
     .top-bar { flex-direction: column; align-items: stretch; }
     .search-box { max-width: 100%; }
 
-    /* Transformar tabla en lista de tarjetas */
     #users-table thead { display: none; }
     #users-table, #users-table tbody, #users-table tr, #users-table td {
         display: block;
@@ -68,19 +66,16 @@
         margin-bottom: 5px;
     }
 
-    /* El nombre y email ocupan el lugar principal */
     #users-table td:first-child {
         margin-bottom: 10px;
     }
 
-    /* El cargo visual en una línea sutil */
     #users-table td:nth-child(2) {
         font-size: 0.85rem;
         color: #64748b;
         font-style: italic;
     }
 
-    /* Los badges de acceso y el estado */
     #users-table td:nth-child(3), 
     #users-table td:nth-child(4) {
         display: inline-block;
@@ -88,7 +83,6 @@
         margin-right: 8px;
     }
 
-    /* Botones de acción flotantes a la derecha */
     #users-table td:last-child {
         position: absolute;
         top: 12px;
@@ -101,7 +95,6 @@
         gap: 5px;
     }
 
-    /* Ajuste del modal para móviles */
     .modal-content {
         width: 95% !important;
         padding: 20px !important;
@@ -189,13 +182,20 @@
         <div class="form-group">
           <label>Permisos del Sistema (Módulo) *</label>
           <select id="user-role" required>
-            <option value="SALES">Ventas</option>
-            <option value="INVENTORY">Almacén</option>
+            <option value="SELLER">Ventas</option>
+            <option value="WAREHOUSE">Almacén</option>
             <option value="MARKETING">Marketing</option>
             <option value="FINANCE">Finanzas</option>
             <option value="HR">Recursos Humanos</option>
-            <option value="ADMIN_BRAND">Administrador (Acceso Total)</option>
+            <option value="ADMIN">Administrador (Acceso Total)</option>
           </select>
+        </div>
+
+        <div class="form-group">
+          <label>Sede</label>
+          <select id="user-branch">
+            <option value="">Sin sede asignada</option>
+            </select>
         </div>
 
         <div class="form-group full-width coord-box" id="coordinator-wrap">

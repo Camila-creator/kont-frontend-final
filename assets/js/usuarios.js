@@ -28,6 +28,29 @@ const btnCancel = document.getElementById("btn-cancel");
 let usersList = [];
 
 // ---------------- CARGA Y RENDERIZADO ----------------
+
+// ✅ NUEVO: Función para cargar las sedes en el select
+async function loadBranchesSelect() {
+    const res = await apiFetch("/branches");
+    if (!res || res.error) return;
+    
+    // Si tu nuevo apiFetch ya devuelve el JSON, usamos res directo. Si no, usamos .json()
+    const data = res.data ? res : await res.json(); 
+    
+    const select = document.getElementById("user-branch");
+    if (!select) return;
+
+    // Limpiamos las opciones para no duplicarlas si se abre el modal varias veces
+    select.innerHTML = '<option value="">Sin sede asignada</option>';
+
+    (data.data || []).filter(b => b.is_active).forEach(b => {
+        const opt = document.createElement("option");
+        opt.value = b.id;
+        opt.textContent = b.name;
+        select.appendChild(opt);
+    });
+}
+
 async function loadUsers() {
     try {
         const json = await apiFetch(API_USERS);
@@ -46,11 +69,11 @@ async function loadUsers() {
 function getRoleBadge(role) {
     const map = {
         "SUPER_ADMIN": { class: "badge-super", text: "Super Admin", color: "#7c3aed" },
-        "ADMIN_BRAND": { class: "badge-admin", text: "Administrador", color: "#2563eb" },
-        "SALES": { class: "badge-sales", text: "Ventas", color: "#059669" },
+        "ADMIN": { class: "badge-admin", text: "Administrador", color: "#2563eb" },
+        "SELLER": { class: "badge-sales", text: "Ventas", color: "#059669" },
         "FINANCE": { class: "badge-finance", text: "Finanzas", color: "#db2777" },
         "MARKETING": { class: "badge-mkt", text: "Marketing", color: "#ea580c" },
-        "INVENTORY": { class: "badge-inv", text: "Almacén", color: "#4b5563" },
+        "WAREHOUSE": { class: "badge-inv", text: "Almacén", color: "#4b5563" },
         "HR": { class: "badge-hr", text: "RRHH", color: "#0891b2" }
     };
     const r = map[role] || { class: "badge-admin", text: role, color: "#64748b" };
@@ -65,7 +88,8 @@ function renderTable(filterText = "") {
     const filtered = usersList.filter(u => 
         (u.name || "").toLowerCase().includes(term) || 
         (u.email || "").toLowerCase().includes(term) ||
-        (u.custom_title || "").toLowerCase().includes(term)
+        (u.custom_title || "").toLowerCase().includes(term) ||
+        (u.branch_name || "").toLowerCase().includes(term) // ✅ Permite buscar también por sede
     );
 
     if (!filtered.length) {
@@ -102,7 +126,12 @@ function renderTable(filterText = "") {
                     </div>
                 </div>
             </td>
-            <td style="padding:15px; color:#475569; font-weight: 600; font-size: 0.9rem;">${u.custom_title || "Sin cargo"}</td>
+            <td style="padding:15px;">
+                <div style="line-height:1.2;">
+                    <span style="display:block; color:#475569; font-weight:600; font-size:0.9rem;">${u.custom_title || "Sin cargo"}</span>
+                    <span style="font-size:0.75rem; color:#94a3b8;"><i class="bi bi-geo-alt"></i> ${u.branch_name || "Sin sede"}</span>
+                </div>
+            </td>
             <td style="padding:15px;">${getRoleBadge(u.role)} ${coordBadge}</td>
             <td style="padding:15px;">${statusBadge}</td>
             <td style="padding:15px; text-align: right;">
@@ -127,30 +156,43 @@ function renderTable(filterText = "") {
 }
 
 // ---------------- LÓGICA DEL FORMULARIO ----------------
-function resetForm() {
+async function resetForm() {
     modalTitle.textContent = "Registrar Empleado";
     form.reset();
     inputId.value = "";
     inputPassword.required = true;
     if (passwordHint) passwordHint.textContent = "(Mínimo 6 caracteres)";
     if (coordinatorWrap) coordinatorWrap.style.display = "flex";
+    
+    // ✅ Cargar las opciones de sedes cuando se va a crear uno nuevo
+    await loadBranchesSelect();
 }
 
-function onEdit(id) {
+async function onEdit(id) {
     const u = usersList.find(x => Number(x.id) === Number(id));
     if (!u) return;
     
     modalTitle.textContent = "Editar Empleado";
+    
+    // ✅ Cargar las opciones de sedes antes de setear los valores
+    await loadBranchesSelect();
+
     inputId.value = u.id;
     inputName.value = u.name;
     inputEmail.value = u.email;
     inputRole.value = u.role;
     inputCustomTitle.value = u.custom_title || "";
     inputIsCoordinator.checked = !!u.is_coordinator;
+    
+    // ✅ Setear la sede actual del usuario
+    const branchSelect = document.getElementById("user-branch");
+    if (branchSelect) {
+        branchSelect.value = u.branch_id || "";
+    }
 
     // Lógica de visibilidad para Admin
     if (coordinatorWrap) {
-        coordinatorWrap.style.display = (u.role === "ADMIN_BRAND") ? "none" : "flex";
+        coordinatorWrap.style.display = (u.role === "ADMIN") ? "none" : "flex";
     }
     
     inputPassword.value = "";
@@ -162,7 +204,7 @@ function onEdit(id) {
 
 inputRole?.addEventListener("change", (e) => {
     if (coordinatorWrap) {
-        if (e.target.value === "ADMIN_BRAND") {
+        if (e.target.value === "ADMIN") {
             coordinatorWrap.style.display = "none";
             inputIsCoordinator.checked = true; 
         } else {
@@ -187,7 +229,9 @@ async function onSubmit(e) {
         email: inputEmail.value.trim(),
         role: inputRole.value,
         custom_title: inputCustomTitle.value.trim(),       
-        is_coordinator: !!inputIsCoordinator.checked       
+        is_coordinator: !!inputIsCoordinator.checked,
+        // ✅ AÑADIDO: Se envía el branch_id al backend
+        branch_id: document.getElementById("user-branch").value || null
     };
 
     if (inputPassword.value.trim() !== "") {
@@ -257,7 +301,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     loadUsers();
-    btnNew?.addEventListener("click", () => { resetForm(); openModal(); });
+    
+    // ✅ Ahora resetForm es asíncrono, por lo que lo llamamos así
+    btnNew?.addEventListener("click", async () => { 
+        await resetForm(); 
+        openModal(); 
+    });
+    
     btnCancel?.addEventListener("click", closeModal);
     form?.addEventListener("submit", onSubmit);
     
