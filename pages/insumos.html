@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <style>
-    /* ESTILOS PREMIUM PARA INSUMOS */
+    /* ESTILOS ESPECÍFICOS PARA INSUMOS (Adaptados para Kont) */
     .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; background: white; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
     .filters-wrapper { display: flex; gap: 15px; flex-wrap: wrap; flex-grow: 1; align-items: center; }
     
@@ -19,15 +19,12 @@
     .filter-group { display: flex; align-items: center; gap: 8px; }
     .filter-group select { padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; outline: none; background: #f8fafc; color: #475569;}
 
-    /* Badges de Categorías Dinámicos */
     .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; display: inline-block; text-align: center; }
-    
     .badge-stock-ok { background: #f8fafc; color: #334155; border: 1px solid #e2e8f0;}
     .badge-stock-low { background: #fee2e2; color: #dc2626; animation: pulse 2s infinite; border: 1px solid #fecaca;}
 
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
-    /* Formulario en Grid */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
     .full-width { grid-column: span 2; }
     .form-group { display: flex; flex-direction: column; gap: 5px; }
@@ -35,7 +32,6 @@
     .form-group input, .form-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; outline: none; transition: border 0.3s; }
     .form-group input:focus, .form-group select:focus { border-color: #10b981; }
     
-    /* Botón plus al lado del select */
     .input-with-btn { display: flex; gap: 5px; }
     .input-with-btn select { flex-grow: 1; }
     .btn-append { background: #10b981; color: white; border: none; border-radius: 6px; padding: 0 12px; cursor: pointer; transition: 0.2s; }
@@ -46,206 +42,23 @@
     .btn-edit { background: #3b82f6; } .btn-edit:hover { background: #2563eb; }
     .btn-del { background: #ef4444; } .btn-del:hover { background: #dc2626; }
 
+    /* Estilo para lista de categorías en gestión */
+    #manage-cat-list li { border-bottom: 1px solid #f1f5f9; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+
     @media (max-width: 768px) {
-    /* 1. LAYOUT Y CABECERA */
-    .page { padding: 10px !important; }
-    
-    .page-header h1 { font-size: 1.7rem !important; text-align: center; }
-    .page-header p { display: none; }
-
-    /* 2. TOP BAR: BUSCADOR Y BOTÓN CENTRADOS */
-    .top-bar { 
-        flex-direction: column; 
-        padding: 10px; 
-        background: transparent; 
-        border: none; 
-        box-shadow: none;
-        align-items: center;
+        .page { padding: 10px !important; }
+        .page-header h1 { font-size: 1.7rem !important; text-align: center; }
+        .top-bar { flex-direction: column; padding: 10px; background: transparent; border: none; box-shadow: none; align-items: center; }
+        .filters-wrapper { width: 100%; flex-wrap: wrap; justify-content: center; }
+        .filter-group { width: 48%; }
+        #btn-new-raw { width: 100%; max-width: 400px; height: 48px; margin-top: 10px; }
+        #raw-table thead { display: none; }
+        #raw-table, #raw-table tbody, #raw-table tr, #raw-table td { display: block; width: 100%; }
+        #raw-table tbody tr { background: white; margin-bottom: 8px; padding: 12px; border-radius: 12px; border: 1px solid #edf2f7; position: relative; }
+        #raw-table td:nth-child(5) { position: absolute; top: 12px; right: 12px; width: auto; font-weight: 800; }
+        .form-grid { display: flex !important; flex-direction: column !important; }
+        .modal-actions { flex-direction: column-reverse; gap: 10px; }
     }
-
-    .filters-wrapper { 
-        width: 100%; 
-        flex-direction: column; 
-        gap: 8px; 
-    }
-
-    .search-box { 
-        width: 100%; 
-        min-width: unset; 
-        height: 40px; 
-        justify-content: center;
-    }
-    
-    .search-box input { text-align: center; }
-
-    /* FILTROS SECUNDARIOS (En una línea para ahorrar espacio) */
-    .filter-group { width: 48%; }
-    .filter-group select { width: 100%; font-size: 0.8rem; padding: 6px; }
-    
-    .filters-wrapper { 
-        display: flex; 
-        flex-direction: row; 
-        flex-wrap: wrap; 
-        justify-content: center;
-    }
-
-    /* EL BOTÓN "NUEVO INSUMO" (Azul y Grande) */
-    #btn-new-raw {
-        width: 100%;
-        max-width: 400px;
-        height: 48px;
-        background: #3b82f6 !important; /* Azul Kont */
-        border-radius: 12px;
-        font-size: 1rem;
-        margin-top: 10px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
-    }
-
-    /* 3. TARJETAS DE INSUMOS ULTRA-COMPACTAS */
-    #raw-table thead { display: none; }
-    #raw-table, #raw-table tbody, #raw-table tr, #raw-table td {
-        display: block;
-        width: 100%;
-    }
-
-    .card { background: transparent !important; border: none !important; box-shadow: none !important; }
-
-    #raw-table tbody tr {
-        background: white;
-        margin-bottom: 8px;
-        padding: 12px;
-        border-radius: 12px;
-        border: 1px solid #edf2f7;
-        position: relative;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-
-    /* ID e Insumo */
-    #raw-table td:nth-child(1) { 
-        color: #94a3b8; 
-        font-size: 0.65rem; 
-        font-weight: 800; 
-        padding: 0; 
-    }
-    
-    #raw-table td:nth-child(2) { 
-        font-size: 1rem; 
-        font-weight: 700; 
-        color: #1e293b; 
-        padding: 0; 
-        margin-bottom: 4px;
-        padding-right: 90px; /* Evita que el nombre choque con el costo */
-    }
-
-    /* Costo Unitario (Arriba a la derecha) */
-    #raw-table td:nth-child(5) { 
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        text-align: right;
-        font-weight: 800;
-        color: #1e293b;
-        font-size: 1rem;
-        width: auto;
-    }
-
-    /* Categoría y Proveedor */
-    #raw-table td:nth-child(3), 
-    #raw-table td:nth-child(4) { 
-        display: inline-block;
-        width: auto;
-        padding: 0;
-        margin-right: 8px;
-        font-size: 0.75rem;
-    }
-
-    /* Stock con Badge */
-    #raw-table td:nth-child(6) { 
-        margin-top: 8px;
-        padding: 0;
-    }
-
-    /* Acciones */
-    #raw-table td:last-child {
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid #f1f5f9;
-        display: flex;
-        justify-content: center;
-        gap: 15px;
-    }
-
-    .btn-icon {
-        flex: 1;
-        max-width: 120px;
-        height: 38px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    /* 4. MODALES ADAPTADOS PARA INSUMOS */
-    .modal {
-        padding: 10px;
-        display: flex;
-        align-items: flex-start; /* Para que el scroll empiece arriba si el cel es pequeño */
-        overflow-y: auto;
-    }
-
-    .modal-content { 
-        width: 100% !important; 
-        max-width: 100% !important; 
-        padding: 20px 15px; 
-        border-radius: 20px; 
-        margin: 10px 0;
-    }
-
-    /* Cambiamos el grid de 2 columnas a 1 sola columna en móvil */
-    .form-grid { 
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 12px; 
-    }
-
-    /* Forzamos que todos los grupos ocupen el 100% */
-    .form-group, .full-width { 
-        grid-column: span 2; 
-        width: 100%;
-    }
-
-    /* Inputs más altos para facilitar el toque (Touch Targets) */
-    .form-group input, 
-    .form-group select, 
-    .form-group textarea {
-        height: 45px;
-        font-size: 16px !important; /* CRÍTICO: Evita el zoom automático en iOS */
-        border-radius: 8px;
-    }
-
-    .form-group textarea {
-        height: auto !important;
-        min-height: 80px;
-    }
-
-    /* Botones del modal uno debajo del otro para mejor ergonomía */
-    .modal-actions {
-        display: flex;
-        flex-direction: column-reverse; /* Guardar queda arriba del botón Cancelar */
-        gap: 10px;
-        margin-top: 20px;
-    }
-
-    .modal-actions button {
-        width: 100%;
-        height: 48px;
-        margin: 0;
-        font-weight: 700;
-        border-radius: 10px;
-    }
-  }
   </style>
 </head>
 <body>
@@ -256,9 +69,15 @@
     <div id="header"></div>
 
     <div class="page" style="padding: 25px; background: #f8fafc; min-height: calc(100vh - 70px);">
-      <div class="page-header" style="margin-bottom: 20px;">
-        <h1 style="margin: 0; color: #1e293b; font-weight: 800;">🧪 Gestión de Insumos</h1>
-        <p style="color: #64748b; margin-top: 5px;">Materia prima y envases con categorías personalizables.</p>
+      
+      <div class="page-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h1 style="margin: 0; color: #1e293b; font-weight: 800;">🧪 Gestión de Insumos</h1>
+            <p style="color: #64748b; margin-top: 5px;">Materia prima y envases con categorías personalizables.</p>
+        </div>
+        <button type="button" id="btn-manage-categories" class="btn-secondary" style="padding: 8px 15px; font-size: 0.85rem;">
+            <i class="bi bi-gear"></i> Gestionar Categorías
+        </button>
       </div>
 
       <div class="top-bar">
@@ -376,29 +195,20 @@
   </div>
 </div>
 
-<div class="modal hidden" id="confirm-modal">
-  <div class="modal-content" style="max-width: 400px; text-align: center;">
-    <div style="font-size: 3rem; color: #ef4444; margin-bottom: 10px;"><i class="bi bi-exclamation-circle"></i></div>
-    <h2 id="confirm-title">Confirmar</h2>
-    <p id="confirm-message" style="margin: 10px 0 20px;">¿Estás segura?</p>
-    <div class="modal-actions" style="justify-content: center;">
-      <button type="button" class="btn-secondary" id="confirm-cancel">Cancelar</button>
-      <button type="button" class="btn-danger" id="confirm-ok">Confirmar</button>
+<div id="manage-cat-modal" class="modal hidden" style="z-index: 2500;">
+    <div class="modal-content" style="max-width: 400px; border-radius: 16px;">
+        <h3 style="margin-top: 0; color: #1e293b; font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">Gestionar Categorías</h3>
+        
+        <ul id="manage-cat-list" style="list-style: none; padding: 0; margin: 15px 0; max-height: 250px; overflow-y: auto;">
+            </ul>
+
+        <div class="modal-actions" style="margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 15px; justify-content: flex-end;">
+            <button type="button" id="btn-close-manage-cat" class="btn-secondary" style="width: 100%;">Cerrar</button>
+        </div>
     </div>
-  </div>
 </div>
 
-<div class="modal hidden" id="alert-modal">
-  <div class="modal-content" style="max-width: 400px; text-align: center;">
-    <h2 id="alert-title">Aviso</h2>
-    <p id="alert-message" style="margin: 10px 0 20px;">Mensaje</p>
-    <div class="modal-actions" style="justify-content: center;">
-      <button type="button" class="btn-primary" id="alert-ok" style="width: 100%;">Entendido</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal hidden" id="category-modal" style="z-index: 2000;">
+<div class="modal hidden" id="category-modal" style="z-index: 2600;">
   <div class="modal-content" style="max-width: 400px; border-radius: 16px;">
     <h2 style="margin-top: 0; color: #1e293b; font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">Nueva Categoría</h2>
     
@@ -418,25 +228,29 @@
       <button type="button" id="btn-cat-save" class="btn-primary" style="background: #1e293b;"><i class="bi bi-check-lg"></i> Crear Categoría</button>
     </div>
   </div>
-  <button type="button" id="btn-manage-categories" class="btn-secondary" style="margin-top: 8px;">
-    <i class="bi bi-gear"></i> Gestionar Categorías
-</button>
+</div>
 
-<div id="manage-cat-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="z-index: 2500;">
-    <div class="bg-white p-6 rounded-lg w-96 shadow-xl">
-        <h3 class="text-lg font-bold mb-4 text-slate-800">Gestionar Categorías</h3>
-        
-        <ul id="manage-cat-list" class="mb-4 max-h-60 overflow-y-auto pr-2">
-            </ul>
-
-        <div class="flex justify-end mt-4">
-            <button type="button" id="btn-close-manage-cat" class="btn-secondary">Cerrar</button>
-        </div>
+<div class="modal hidden" id="confirm-modal" style="z-index: 3000;">
+  <div class="modal-content" style="max-width: 400px; text-align: center;">
+    <div style="font-size: 3rem; color: #ef4444; margin-bottom: 10px;"><i class="bi bi-exclamation-circle"></i></div>
+    <h2 id="confirm-title">Confirmar</h2>
+    <p id="confirm-message" style="margin: 10px 0 20px;">¿Estás segura?</p>
+    <div class="modal-actions" style="justify-content: center;">
+      <button type="button" class="btn-secondary" id="confirm-cancel">Cancelar</button>
+      <button type="button" class="btn-danger" id="confirm-ok">Confirmar</button>
     </div>
-</div>
+  </div>
 </div>
 
-
+<div class="modal hidden" id="alert-modal" style="z-index: 4000;">
+  <div class="modal-content" style="max-width: 400px; text-align: center;">
+    <h2 id="alert-title">Aviso</h2>
+    <p id="alert-message" style="margin: 10px 0 20px;">Mensaje</p>
+    <div class="modal-actions" style="justify-content: center;">
+      <button type="button" class="btn-primary" id="alert-ok" style="width: 100%;">Entendido</button>
+    </div>
+  </div>
+</div>
 
 <script src="../assets/js/main.js"></script>
 <script src="../assets/js/insumos.js"></script>
