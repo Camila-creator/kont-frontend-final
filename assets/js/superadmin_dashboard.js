@@ -1,150 +1,144 @@
 // frontend/assets/js/superadmin_dashboard.js
 
-const API_DASHBOARD_SA = "https://kont-backend-final.onrender.com/api/sa-dashboard/metrics";
+// ✅ CAMBIO: Ruta relativa para el cerebro central
+const API_DASHBOARD_SA = "/sa-dashboard/metrics";
 
 document.addEventListener("DOMContentLoaded", () => {
-    loadSuperAdminDashboard();
+    // Verificamos que el sistema base esté listo
+    if (typeof apiFetch === "function") {
+        loadSuperAdminDashboard();
+    } else {
+        console.error("❌ Error Crítico: No se detectó main.js");
+    }
 });
 
-// Fetch con Gafete de Súper Admin
-async function apiFetch(url, options = {}) {
-    const token = localStorage.getItem("agromedic_token");
-    const res = await fetch(url, {
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        ...options
-    });
-    if (res.status === 401 || res.status === 403) { window.location.replace("../pages/login.html"); return; }
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-    return json;
-}
+// 🗑️ BORRADO: La función apiFetch local fue eliminada.
 
-// Cargar toda la data del Dashboard de golpe
 async function loadSuperAdminDashboard() {
     try {
+        // ✅ Ahora usamos la función global con protección anti-HTML
         const res = await apiFetch(API_DASHBOARD_SA);
-        const data = res.data; // El backend nos mandará un súper JSON con todo
         
-        // 1. Llenar KPIs
+        // El backend nos manda un objeto con 'stats', 'alerts', etc.
+        const data = res.data || res; 
+        
+        if (!data.stats) throw new Error("Estructura de datos incompleta");
+
+        // 1. Llenar KPIs (Métricas principales)
         document.getElementById("kpi-tenants").innerText = data.stats.total_tenants || 0;
         document.getElementById("kpi-users").innerText = data.stats.total_users || 0;
         document.getElementById("kpi-tickets").innerText = data.stats.pending_tickets || 0;
         document.getElementById("kpi-expiring").innerText = data.stats.expiring_soon || 0;
 
-        // 2. Llenar Alertas
-        renderAlerts(data.alerts);
-
-        // 3. Llenar Top Clientes
-        renderTopTenants(data.top_tenants);
-
-        // 4. Llenar Próximos Vencimientos
-        renderExpiring(data.expiring_tenants);
-
-        // 5. Llenar Clientes Leales (Más antiguos)
-        renderLoyal(data.loyal_tenants);
+        // 2. Llenar Secciones Visuales
+        renderAlerts(data.alerts || []);
+        renderTopTenants(data.top_tenants || []);
+        renderExpiring(data.expiring_tenants || []);
+        renderLoyal(data.loyal_tenants || []);
 
     } catch (err) {
-        console.error("Error cargando Dashboard Súper Admin:", err);
-        document.getElementById("alerts-container").innerHTML = `<p style="color:red;">Error al conectar con el servidor.</p>`;
+        console.error("Error en Dashboard:", err);
+        const alertCont = document.getElementById("alerts-container");
+        if (alertCont) {
+            alertCont.innerHTML = `<p style="color:#ef4444; font-weight:600; text-align:center; padding:10px;">
+                <i class="bi bi-wifi-off"></i> No se pudo conectar con el servidor de métricas.
+            </p>`;
+        }
     }
 }
 
-// DIBUJAR ALERTAS
+// --- DIBUJAR COMPONENTES (UX/UI) ---
+
 function renderAlerts(alerts) {
     const container = document.getElementById("alerts-container");
+    if (!container) return;
     container.innerHTML = "";
     
-    if (!alerts || alerts.length === 0) {
-        container.innerHTML = `<p style="text-align:center; color:#10b981; font-weight:600;"><i class="bi bi-check-circle-fill"></i> ¡Todo en orden! No hay alertas críticas.</p>`;
+    if (alerts.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color:#10b981; padding: 20px;">
+            <i class="bi bi-shield-check" style="font-size: 1.5rem;"></i><br>Todo en orden. No hay alertas.
+        </div>`;
         return;
     }
 
     alerts.forEach(a => {
-        // a.type puede ser 'danger' (rojo) o 'warning' (amarillo)
         const isWarning = a.type === 'warning';
         const boxClass = isWarning ? 'alert-box alert-warning' : 'alert-box';
-        const icon = isWarning ? '<i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b;"></i>' : '<i class="bi bi-x-octagon-fill" style="color:#ef4444;"></i>';
+        const icon = isWarning ? 'bi-exclamation-triangle-fill' : 'bi-x-octagon-fill';
+        const color = isWarning ? '#f59e0b' : '#ef4444';
         
         container.innerHTML += `
-            <div class="${boxClass}">
+            <div class="${boxClass}" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 12px; border-radius: 8px; border-left: 4px solid ${color};">
                 <div>
-                    ${icon} <span style="font-weight: 600; color: #0f172a; margin-left: 5px;">${a.title}</span><br>
-                    <small style="color: #475569;">${a.message}</small>
+                    <i class="bi ${icon}" style="color:${color};"></i> 
+                    <span style="font-weight: 600; color: #1e293b; margin-left: 8px;">${a.title}</span><br>
+                    <small style="color: #64748b; margin-left: 24px;">${a.message}</small>
                 </div>
-                <a href="${a.link || '#'}" style="font-size: 0.85rem; color: #3b82f6; text-decoration: none; font-weight: 600;">Ver detalle</a>
+                <a href="${a.link || '#'}" style="font-size: 0.8rem; color: #3b82f6; font-weight: 700;">GESTIONAR</a>
             </div>
         `;
     });
 }
 
-// DIBUJAR TOP CLIENTES (Por cantidad de usuarios o actividad)
 function renderTopTenants(tenants) {
     const container = document.getElementById("top-tenants-container");
+    if (!container) return;
     container.innerHTML = "";
     
-    if (!tenants || tenants.length === 0) { container.innerHTML = "<p>No hay datos suficientes.</p>"; return; }
-
-    tenants.forEach((t, index) => {
-        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '▪️';
+    tenants.slice(0, 5).forEach((t, index) => {
+        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '•';
         container.innerHTML += `
-            <div class="list-item">
+            <div class="list-item" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9;">
                 <div>
-                    <strong style="color: #1e293b;">${medal} ${t.name}</strong><br>
-                    <small style="color: #64748b;">${t.email || 'Sin correo'}</small>
+                    <div style="font-weight: 700; color: #1e293b;">${medal} ${t.name}</div>
+                    <small style="color: #94a3b8;">${t.owner_email || 'Sin contacto'}</small>
                 </div>
                 <div style="text-align: right;">
-                    <span style="font-weight: 800; color: #3b82f6;">${t.user_count}</span><br>
-                    <small style="color: #94a3b8;">Usuarios activos</small>
+                    <span style="font-weight: 800; color: #8b5cf6;">${t.user_count}</span><br>
+                    <small style="color: #cbd5e1; font-size: 0.7rem;">USUARIOS</small>
                 </div>
             </div>
         `;
     });
 }
 
-// DIBUJAR PRÓXIMOS VENCIMIENTOS
 function renderExpiring(tenants) {
     const container = document.getElementById("expiring-container");
+    if (!container) return;
     container.innerHTML = "";
     
-    if (!tenants || tenants.length === 0) { container.innerHTML = "<p style='color: #64748b;'>Nadie vence en los próximos 30 días.</p>"; return; }
+    if (tenants.length === 0) {
+        container.innerHTML = `<p style="color: #94a3b8; font-size: 0.9rem; text-align: center;">Sin vencimientos próximos.</p>`;
+        return;
+    }
 
     tenants.forEach(t => {
-        const daysLeft = t.days_left;
-        let color = daysLeft <= 7 ? '#ef4444' : '#f59e0b'; // Rojo si faltan < 7 días, amarillo si es < 30
-        
+        const color = t.days_left <= 7 ? '#ef4444' : '#f59e0b';
         container.innerHTML += `
-            <div class="list-item">
+            <div class="list-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
                 <div>
-                    <strong style="color: #1e293b;">${t.name}</strong><br>
-                    <small style="color: #64748b;">Vence: ${new Date(t.license_expiry).toLocaleDateString()}</small>
+                    <div style="font-weight: 700; color: #334155;">${t.name}</div>
+                    <small style="color: #94a3b8;">Vence el ${new Date(t.license_expiry).toLocaleDateString()}</small>
                 </div>
-                <div>
-                    <span style="background: ${color}20; color: ${color}; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem;">
-                        Quedan ${daysLeft} días
-                    </span>
+                <div style="background: ${color}15; color: ${color}; padding: 4px 10px; border-radius: 20px; font-weight: 800; font-size: 0.75rem;">
+                    -${t.days_left} DÍAS
                 </div>
             </div>
         `;
     });
 }
 
-// DIBUJAR CLIENTES MÁS ANTIGUOS
 function renderLoyal(tenants) {
     const container = document.getElementById("loyal-container");
+    if (!container) return;
     container.innerHTML = "";
     
-    if (!tenants || tenants.length === 0) { container.innerHTML = "<p>No hay datos.</p>"; return; }
-
     tenants.forEach(t => {
-        const joinDate = new Date(t.created_at).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+        const joinDate = new Date(t.created_at).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
         container.innerHTML += `
-            <div class="list-item">
-                <div>
-                    <strong style="color: #1e293b;">${t.name}</strong>
-                </div>
-                <div style="color: #64748b; font-size: 0.85rem;">
-                    Desde ${joinDate}
-                </div>
+            <div class="list-item" style="display: flex; justify-content: space-between; padding: 10px 0;">
+                <span style="font-weight: 600; color: #1e293b;">${t.name}</span>
+                <span style="color: #64748b; font-size: 0.85rem;">Miembro desde ${joinDate}</span>
             </div>
         `;
     });

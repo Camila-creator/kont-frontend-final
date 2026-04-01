@@ -1,6 +1,7 @@
 // frontend/assets/js/soporte_tecnico.js
 
-const API_SOPORTE = "https://kont-backend-final.onrender.com/api/soporte-global";
+// ✅ CAMBIO: Usamos ruta relativa para que el "cerebro" de main.js la maneje
+const API_SOPORTE = "/soporte-global"; 
 const filterSelect = document.getElementById("filter-status");
 
 // Modal Elements
@@ -9,15 +10,22 @@ const btnClose = document.getElementById("btn-close-ticket");
 let currentTicketId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Verificamos que el sistema base esté listo
+    if (typeof apiFetch !== "function") {
+        console.error("❌ main.js no detectado. El soporte no funcionará.");
+        return;
+    }
+
     loadTickets();
 
-    // 📡 EL RADAR: Actualizar la tabla automáticamente cada 10 segundos
+    // 📡 EL RADAR: Actualización automática inteligente
     setInterval(() => {
-        // Solo recarga si el modal está oculto (para no interrumpirte si estás leyendo)
-        if (modal.classList.contains("hidden")) {
-            loadTickets(filterSelect ? filterSelect.value : "ALL");
+        // Solo recarga si no estás interactuando con un ticket (modal oculto)
+        if (modal && modal.classList.contains("hidden")) {
+            const currentFilter = filterSelect ? filterSelect.value : "ALL";
+            loadTickets(currentFilter);
         }
-    }, 10000); // 10000 milisegundos = 10 segundos
+    }, 10000); 
 
     // Eventos del Modal
     if(btnClose) btnClose.addEventListener("click", () => modal.classList.add("hidden"));
@@ -33,30 +41,26 @@ document.addEventListener("DOMContentLoaded", () => {
     if(filterSelect) filterSelect.addEventListener("change", () => loadTickets(filterSelect.value));
 });
 
-// Fetch con el gafete de Súper Admin
-async function apiFetch(url, options = {}) {
-    const token = localStorage.getItem("agromedic_token");
-    const res = await fetch(url, {
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        ...options
-    });
-    if (res.status === 401 || res.status === 403) { window.location.replace("../pages/login.html"); return; }
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-    return json;
-}
+// 🗑️ BORRADO: La función apiFetch local fue eliminada para usar la global.
 
-// Cargar tabla (Súper Admin)
 async function loadTickets(statusFilter = "ALL") {
     const tbody = document.querySelector("#ticket-table tbody");
-    if (!tbody) return; // 🛡️ Escudo protector
+    if (!tbody) return;
 
     try {
-        const url = statusFilter === "ALL" ? API_SOPORTE : `${API_SOPORTE}?status=${statusFilter}`;
-        const res = await apiFetch(url);
-        renderTable(res.data);
+        // Construimos la URL de forma limpia
+        const endpoint = statusFilter === "ALL" ? API_SOPORTE : `${API_SOPORTE}?status=${statusFilter}`;
+        
+        // Llamamos a la API centralizada
+        const res = await apiFetch(endpoint);
+        
+        // El main.js ya nos devuelve el JSON masticado
+        const tickets = Array.isArray(res) ? res : (res.data || []);
+        
+        renderTable(tickets);
     } catch (err) {
-        console.error("Error del radar:", err);
+        // El radar falla en silencio para no molestar, pero lo logueamos
+        console.warn("Radar de soporte: El servidor no respondió a tiempo.");
     }
 }
 
@@ -66,34 +70,42 @@ function renderTable(tickets) {
 
     tbody.innerHTML = "";
     if (!tickets || tickets.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 20px;">No hay tickets de soporte registrados. ¡Todo funciona perfecto! 🎉</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 40px;">
+            <i class="bi bi-check-circle" style="font-size: 2rem; color: #10b981;"></i><br>
+            No hay tickets pendientes. ¡Todo bajo control! 🎉
+        </td></tr>`;
         return;
     }
 
     tickets.forEach(t => {
-        let badgeClass = "status-pendiente";
-        if (t.status === 'EN PROCESO') badgeClass = "status-proceso";
-        if (t.status === 'RESUELTO') badgeClass = "status-resuelto";
+        const badgeClass = t.status === 'EN PROCESO' ? "status-proceso" : 
+                           t.status === 'RESUELTO' ? "status-resuelto" : "status-pendiente";
 
         let prioClass = "prio-baja";
         let prioIcon = "🟢 Baja";
         if (t.priority === 'ALTA') { prioClass = "prio-alta"; prioIcon = "🔴 Alta"; }
         if (t.priority === 'MEDIA') { prioClass = "prio-media"; prioIcon = "🟡 Media"; }
 
-        const dateStr = new Date(t.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
+        const dateStr = new Date(t.created_at).toLocaleDateString('es-ES', { 
+            day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' 
+        });
 
         const tr = document.createElement("tr");
+        // Guardamos el objeto en el dataset para recuperarlo fácil al hacer click
         tr.dataset.ticket = JSON.stringify(t); 
         tr.onclick = function() { openModal(this.dataset.ticket); };
 
         tr.innerHTML = `
-            <td style="font-weight: 800; color: #94a3b8;">#${String(t.id).padStart(4, '0')}</td>
-            <td style="font-weight: 700; color: #0f172a;">${t.empresa || 'Desconocida'}</td>
-            <td>${t.usuario_nombre || 'Usuario'} <br><small style="color: #94a3b8;">${t.usuario_email || ''}</small></td>
-            <td style="font-weight: 600;">${t.subject}</td>
-            <td style="text-align: center;" class="${prioClass}">${prioIcon}</td>
-            <td style="text-align: center;"><span class="badge ${badgeClass}">${t.status}</span></td>
-            <td style="text-align: right; color: #64748b; font-size: 0.85rem;">${dateStr}</td>
+            <td style="font-weight: 800; color: #94a3b8; vertical-align: middle;">#${String(t.id).padStart(4, '0')}</td>
+            <td style="font-weight: 700; color: #0f172a; vertical-align: middle;">${t.empresa || 'Desconocida'}</td>
+            <td style="vertical-align: middle;">
+                <div style="font-weight: 600;">${t.usuario_nombre || 'Usuario'}</div>
+                <div style="font-size: 0.75rem; color: #94a3b8;">${t.usuario_email || ''}</div>
+            </td>
+            <td style="font-weight: 600; vertical-align: middle;">${t.subject}</td>
+            <td style="text-align: center; vertical-align: middle;"><span class="prio-tag ${prioClass}">${prioIcon}</span></td>
+            <td style="text-align: center; vertical-align: middle;"><span class="badge ${badgeClass}">${t.status}</span></td>
+            <td style="text-align: right; color: #64748b; font-size: 0.85rem; vertical-align: middle;">${dateStr}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -104,7 +116,8 @@ function openModal(ticketJson) {
     const t = JSON.parse(ticketJson);
     currentTicketId = t.id;
 
-    document.getElementById("modal-ticket-title").innerText = `Ticket #${String(t.id).padStart(4, '0')} - ${t.subject}`;
+    document.getElementById("modal-ticket-title").innerText = `Ticket #${String(t.id).padStart(4, '0')}`;
+    document.getElementById("modal-subject").innerText = t.subject;
     document.getElementById("modal-tenant").innerText = t.empresa || 'Desconocida';
     document.getElementById("modal-user").innerText = `${t.usuario_nombre || 'Usuario'} (${t.usuario_email || 'Sin correo'})`;
     document.getElementById("modal-priority").innerText = t.priority;
@@ -114,7 +127,7 @@ function openModal(ticketJson) {
     modal.classList.remove("hidden");
 }
 
-// Actualizar estado del ticket (Pendiente -> Resuelto)
+// Actualizar estado del ticket
 async function updateTicketStatus(newStatus) {
     if (!currentTicketId) return;
     
@@ -125,8 +138,11 @@ async function updateTicketStatus(newStatus) {
         });
         
         modal.classList.add("hidden");
+        // Recarga usando el filtro actual para que no se pierda la vista
         loadTickets(filterSelect ? filterSelect.value : 'ALL'); 
     } catch (err) {
-        alert("Error al actualizar el ticket: " + err.message);
+        console.error("Error al actualizar ticket:", err);
+        // Aquí podrías usar tu función global de alertas si la tienes
+        alert("No se pudo actualizar el estado del ticket.");
     }
 }
