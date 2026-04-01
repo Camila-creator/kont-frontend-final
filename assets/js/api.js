@@ -1,11 +1,11 @@
 // assets/js/api.js
-// CLIENTE HTTP CENTRALIZADO — usa "agromedic_token" (consistente con main.js y login.js)
+// CLIENTE HTTP CENTRALIZADO — con soporte para Refresh Token
 
 const API_BASE = "https://kont-backend-final.onrender.com/api";
 
 async function apiFetch(endpoint, options = {}) {
-  // CONSISTENCIA FIX: mismo key que usa login.js y main.js
-  const token = localStorage.getItem("agromedic_token");
+  // Obtenemos el token de acceso actual
+  let token = localStorage.getItem("agromedic_token");
 
   const defaultHeaders = {
     "Content-Type": "application/json",
@@ -18,14 +18,48 @@ async function apiFetch(endpoint, options = {}) {
   };
 
   try {
-    const response = await fetch(`${API_BASE}${endpoint}`, config);
+    let response = await fetch(`${API_BASE}${endpoint}`, config);
 
+    // --- LÓGICA DE REFRESH TOKEN SI EL ACCESS TOKEN EXPIRÓ (401) ---
     if (response.status === 401) {
-      console.warn("Sesión expirada. Redirigiendo al login...");
+      const refreshToken = localStorage.getItem("agromedic_refresh_token");
+
+      if (refreshToken) {
+        console.warn("Access token expirado. Intentando renovar con refresh token...");
+        
+        try {
+          // Intentamos obtener un nuevo access token del backend
+          const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken }),
+          });
+
+          if (refreshRes.ok) {
+            const data = await refreshRes.json();
+            const newToken = data.token;
+
+            // Guardamos el nuevo token
+            localStorage.setItem("agromedic_token", newToken);
+            console.log("✅ Token renovado exitosamente.");
+
+            // Re-intentamos la petición original con el nuevo token
+            config.headers["Authorization"] = `Bearer ${newToken}`;
+            return fetch(`${API_BASE}${endpoint}`, config);
+          }
+        } catch (refreshErr) {
+          console.error("Error crítico al intentar renovar sesión:", refreshErr);
+        }
+      }
+
+      // Si llegamos aquí es porque no había refresh token, el backend lo rechazó, 
+      // o hubo un error de red en el proceso de renovación.
+      console.warn("No se pudo renovar la sesión. Redirigiendo al login...");
       localStorage.clear();
       setTimeout(() => { window.location.href = "/pages/login.html"; }, 300);
       return null;
     }
+    // --- FIN LÓGICA REFRESH ---
 
     if (response.status === 403) {
       const data = await response.json().catch(() => ({}));

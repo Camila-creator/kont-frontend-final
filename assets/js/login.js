@@ -28,8 +28,9 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
             throw new Error(data.error || "Credenciales incorrectas o error en el servidor.");
         }
   
-        // 🛡️ PERSISTENCIA DE SESIÓN
+        // 🛡️ PERSISTENCIA DE SESIÓN (Actualizado con Refresh Token)
         localStorage.setItem("agromedic_token", data.token);
+        localStorage.setItem("agromedic_refresh_token", data.refreshToken); // Clave para la renovación automática
         localStorage.setItem("agromedic_user", JSON.stringify(data.user));
         
         if (data.user && data.user.tenant_id) {
@@ -53,7 +54,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
 
         console.log(`🚀 Redirigiendo a ${user.role} hacia: ${destination}`);
 
-        // ⏱️ Pequeño delay y uso de replace para evitar el "rebote"
+        // ⏱️ Pequeño delay y uso de replace para evitar el "rebote" en el historial
         setTimeout(() => {
             window.location.replace(destination);
         }, 100);
