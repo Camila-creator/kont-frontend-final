@@ -1,4 +1,4 @@
-const API_TENANTS = "https://kont-backend-final.onrender.com/api/tenants";
+const API_TENANTS = "/tenants";
 
 // ---------------- ELEMENTOS DEL DOM ----------------
 const tableBody = document.querySelector("#tenants-table tbody");
@@ -36,27 +36,7 @@ const inputOwnerPassword = document.getElementById("owner-password");
 const btnCancel = document.getElementById("btn-cancel");
 let tenantsList = [];
 
-// ---------------- COMUNICACIÓN CON API ----------------
-async function apiFetch(url, options = {}) {
-    const token = localStorage.getItem("agromedic_token");
-    const headers = { 
-        "Content-Type": "application/json", 
-        "Authorization": `Bearer ${token}` 
-    };
-    
-    const res = await fetch(url, { headers, ...options });
-    let data = null;
-    try { data = await res.json(); } catch {}
-    
-    if (res.status === 401 || res.status === 403) {
-        localStorage.removeItem("agromedic_token");
-        window.location.replace("../pages/login.html");
-        return;
-    }
-    
-    if (!res.ok) throw new Error(data?.error || `Error ${res.status}`);
-    return data;
-}
+
 
 // ---------------- CARGA Y TABLA ----------------
 async function loadTenants() {
