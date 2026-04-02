@@ -12,15 +12,16 @@ const form = document.getElementById("tenant-form");
 const inputId = document.getElementById("tenant-id");
 const inputTenantName = document.getElementById("tenant-name");
 
-// --- CATEGORÍA Y PLAN (NUEVO) ---
+// --- CATEGORÍA Y PLAN ---
 const inputCategory = document.getElementById("tenant-category");
-const inputPlanId = document.getElementById("tenant-plan-id"); // El nuevo select de planes
+const inputPlanId = document.getElementById("tenant-plan-id");
 
-// --- CAMPOS FISCALES ---
+// --- CAMPOS FISCALES Y ESTÉTICOS ---
 const inputRif = document.getElementById("tenant-rif");
 const inputPhone = document.getElementById("tenant-phone");
 const inputInstagram = document.getElementById("tenant-instagram");
 const inputAddress = document.getElementById("tenant-address");
+const inputLogoUrl = document.getElementById("tenant-logo-url"); // ✅ NUEVO
 
 // --- CONTENEDORES DE SECCIÓN ---
 const billingContainer = document.getElementById("billing-section-container");
@@ -35,8 +36,6 @@ const inputOwnerPassword = document.getElementById("owner-password");
 
 const btnCancel = document.getElementById("btn-cancel");
 let tenantsList = [];
-
-
 
 // ---------------- CARGA Y TABLA ----------------
 async function loadTenants() {
@@ -73,7 +72,6 @@ function renderTable(filterText = "") {
             ? `<span class="badge badge-active"><i class="bi bi-check-circle-fill"></i> Activa</span>`
             : `<span class="badge badge-suspended"><i class="bi bi-power"></i> Suspendida</span>`;
 
-        // Lógica de visualización de Plan (Nombre del plan + tipo de cobro)
         let planHtml = `
             <div style="font-weight: 800; color: #9333ea; font-size: 0.85rem;">${t.plan_name || 'SIN PLAN'}</div>
             <div style="font-size: 11px; color: #1e293b; font-weight: 600;">${t.plan_type || '---'}</div>
@@ -92,10 +90,15 @@ function renderTable(filterText = "") {
                </div>`
             : `<div style="font-size: 0.65rem; color: #94a3b8; margin-top: 5px;">Sin Categoría</div>`;
 
+        // Pequeño extra visual: Si la empresa tiene logo, mostramos un iconito, si no la letra inicial.
+        const logoIcon = t.logo_url 
+            ? `<img src="${t.logo_url}" alt="Logo" style="width:24px; height:24px; border-radius:6px; object-fit:cover; display:inline-block; vertical-align:middle; margin-right:5px;">` 
+            : '';
+
         tr.innerHTML = `
             <td style="padding: 15px; font-weight: 700; color: #94a3b8;">#${t.id}</td>
             <td style="padding: 15px;">
-                <div style="font-weight: 800; color: #1e293b;">${t.name}</div>
+                <div style="font-weight: 800; color: #1e293b; display:flex; align-items:center;">${logoIcon}${t.name}</div>
                 <div style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">${t.rif || 'Sin RIF'}</div>
                 ${catBadge} 
             </td>
@@ -130,8 +133,10 @@ function resetForm() {
     modalTitle.textContent = "Registrar Nueva Empresa";
     
     inputCategory.value = ""; 
-    inputPlanId.value = "1"; // Básico por defecto
+    inputPlanId.value = "1"; 
     
+    if (inputLogoUrl) inputLogoUrl.value = ""; // ✅ NUEVO
+
     const today = new Date().toISOString().split('T')[0];
     inputStartDate.value = today;
 
@@ -152,12 +157,14 @@ function onEdit(id) {
     inputTenantName.value = t.name;
     
     inputCategory.value = t.category_id || ""; 
-    inputPlanId.value = t.plan_id || "1"; // Cargar el plan actual
+    inputPlanId.value = t.plan_id || "1"; 
+    inputPlanType.value = t.plan_type || "MENSUAL"; 
     
     inputRif.value = t.rif || "";
     inputPhone.value = t.phone || "";
     inputInstagram.value = t.instagram || "";
     inputAddress.value = t.address || "";
+    if (inputLogoUrl) inputLogoUrl.value = t.logo_url || ""; // ✅ NUEVO
     
     billingContainer.style.display = "none";
     ownerContainer.style.display = "none";
@@ -173,18 +180,18 @@ async function onSubmit(e) {
     e.preventDefault();
     const id = inputId.value;
 
-    // Payload base
+    // Payload base (Incluye Logo)
     const payload = { 
         tenant_name: inputTenantName.value.trim(),
         category_id: inputCategory.value,
-        plan_id: inputPlanId.value, // Siempre enviamos el plan
+        plan_id: inputPlanId.value, 
         rif: inputRif.value.trim(),
         phone: inputPhone.value.trim(),
         instagram: inputInstagram.value.trim(),
-        address: inputAddress.value.trim()
+        address: inputAddress.value.trim(),
+        logo_url: inputLogoUrl ? inputLogoUrl.value.trim() : null // ✅ NUEVO
     };
 
-    // Si es nuevo registro, agregamos datos de dueño y facturación
     if (!id) {
         payload.plan_type = inputPlanType.value;
         payload.start_date = inputStartDate.value;
@@ -198,15 +205,17 @@ async function onSubmit(e) {
             await apiFetch(API_TENANTS, { method: "POST", body: JSON.stringify(payload) });
             openAlert({ title: "¡Éxito!", message: "Empresa registrada bajo el plan seleccionado." });
         } else {
-            // Estructura para el PUT según tu controller
+            // Estructura para el PUT
             const updatePayload = { 
                 name: payload.tenant_name,
                 category_id: payload.category_id,
                 plan_id: payload.plan_id,
+                plan_type: inputPlanType.value, // ✅ Agregado para respetar el req.body del update backend
                 rif: payload.rif,
                 phone: payload.phone,
                 instagram: payload.instagram,
-                address: payload.address
+                address: payload.address,
+                logo_url: payload.logo_url // ✅ NUEVO
             };
             await apiFetch(`${API_TENANTS}/${id}`, { method: "PUT", body: JSON.stringify(updatePayload) });
             openAlert({ title: "Actualizado", message: "Datos y Plan actualizados correctamente." });
