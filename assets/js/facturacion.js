@@ -1,354 +1,443 @@
-let pedidoActual = null; 
+// assets/js/facturacion.js
+// Sistema de facturación Kont — con logo del tenant, templates mejorados
 
-/**
- * 1. BÚSQUEDA Y CARGA DE DATOS
- */
+let pedidoActual = null;
+
+// ─────────────────────────────────────────────────────────
+// 1. BUSCAR PEDIDO
+// ─────────────────────────────────────────────────────────
 async function buscarPedidoParaFacturar() {
-    const orderId = document.getElementById('search-id').value;
-    const token = localStorage.getItem("agromedic_token");
-    const feedback = document.getElementById('feedback-busqueda');
-
+    const orderId = document.getElementById("search-id").value.trim();
+    const feedback = document.getElementById("feedback-busqueda");
     if (!orderId) return;
 
+    feedback.className = "text-[10px] mt-2 font-bold uppercase block text-slate-400";
+    feedback.innerText = "Buscando...";
+
     try {
-        const response = await fetch(`https://kont-backend-final.onrender.com/api/orders/${orderId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const res = await apiFetch(`/orders/${orderId}`);
+        if (!res) return;
 
-        const result = await response.json();
+        pedidoActual = res.data || res;
 
-        if (response.ok && result) {
-            pedidoActual = result.data || result; 
-            
-            document.getElementById('format-selection').classList.remove('opacity-50', 'pointer-events-none');
-            document.getElementById('action-buttons').classList.remove('hidden');
-            
-            if(feedback) {
-                feedback.innerText = `✅ Pedido #${orderId} cargado`;
-                feedback.className = "text-[10px] mt-2 font-bold uppercase text-emerald-600 block";
-            }
+        document.getElementById("format-selection").classList.remove("opacity-50", "pointer-events-none");
+        document.getElementById("action-buttons").classList.remove("hidden");
 
-            // --- ¡LA MAGIA AQUÍ! ---
-            // Renderiza automáticamente la Nota de Entrega al cargar
-            cambiarFormato('invoice'); 
+        feedback.className = "text-[10px] mt-2 font-bold uppercase block text-emerald-600";
+        feedback.innerText = `✅ Pedido #${pedidoActual.order_number || orderId} cargado`;
 
-        } else {
-            pedidoActual = null;
-            if(feedback) feedback.innerText = "❌ No encontrado";
-        }
-    } catch (error) {
-        console.error("Error:", error);
+        cambiarFormato("invoice");
+    } catch (err) {
+        pedidoActual = null;
+        feedback.className = "text-[10px] mt-2 font-bold uppercase block text-red-600";
+        feedback.innerText = "❌ Pedido no encontrado";
     }
 }
-/**
- * 2. ENVÍO POR WHATSAPP (Nueva función)
- */
+
+// ─────────────────────────────────────────────────────────
+// 2. ENVIAR POR WHATSAPP
+// ─────────────────────────────────────────────────────────
 function enviarPorWhatsApp() {
     if (!pedidoActual) return;
 
-    const cliente = pedidoActual.customer || { name: pedidoActual.customer_name || 'Cliente', phone: '' };
-    const empresa = pedidoActual.tenant || { name: 'Nuestra Tienda' };
+    const cliente = pedidoActual.customer || { name: pedidoActual.customer_name || "Cliente", phone: "" };
+    const empresa = pedidoActual.tenant || { name: "Nuestra Tienda" };
     const items = pedidoActual.items || [];
-    
-    // Limpiar el número (quitar espacios, guiones, etc)
-    const telefono = cliente.phone.replace(/\D/g, '');
-    
-    if (!telefono) {
-        alert("El cliente no tiene un número de teléfono registrado.");
-        return;
-    }
 
-    // Construcción del mensaje tipo "Ventas"
-    let mensaje = `*Hola, ${cliente.name.split(' ')[0]}!* 👋\n`;
-    mensaje += `Te enviamos el resumen de tu compra en *${empresa.name}*:\n\n`;
-    mensaje += `*Orden:* #${pedidoActual.id}\n`;
-    mensaje += `*Fecha:* ${new Date(pedidoActual.created_at).toLocaleDateString()}\n`;
-    mensaje += `----------------------------\n`;
-    
+    const telefono = (cliente.phone || "").replace(/\D/g, "");
+    if (!telefono) { alert("El cliente no tiene teléfono registrado."); return; }
+
+    const subtotal = items.reduce((s, it) => s + parseFloat(it.total || 0), 0);
+    const descuento = parseFloat(pedidoActual.discount_amount || 0);
+    const total = subtotal - descuento;
+
+    let msg = `*Hola, ${cliente.name.split(" ")[0]}!* 👋\n`;
+    msg += `Te enviamos el resumen de tu compra en *${empresa.name}*:\n\n`;
+    msg += `*Orden:* #${pedidoActual.order_number || pedidoActual.id}\n`;
+    msg += `*Fecha:* ${new Date(pedidoActual.created_at).toLocaleDateString("es-VE")}\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
     items.forEach(it => {
-        mensaje += `• ${it.qty}x ${it.product_name} - $${parseFloat(it.total).toFixed(2)}\n`;
+        msg += `• ${it.qty}x ${it.product_name} — $${parseFloat(it.total).toFixed(2)}\n`;
     });
+    msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
+    if (descuento > 0) msg += `Descuento: -$${descuento.toFixed(2)}\n`;
+    msg += `*TOTAL: $${total.toFixed(2)}*\n\n`;
+    msg += `¡Gracias por preferirnos! 🚀`;
 
-    mensaje += `----------------------------\n`;
-    mensaje += `*Total a pagar: $${(pedidoActual.total_amount || 0).toFixed(2)}*\n\n`;
-    mensaje += `¡Gracias por preferirnos! 🚀`;
-
-    const url = `https://api.whatsapp.com/send?phone=${telefono}&text=${encodeURIComponent(mensaje)}`;
-    window.open(url, '_blank');
+    window.open(`https://api.whatsapp.com/send?phone=${telefono}&text=${encodeURIComponent(msg)}`, "_blank");
 }
 
-/**
- * 3. CONTROLADOR DE FORMATOS Y UI
- */
+// ─────────────────────────────────────────────────────────
+// 3. CAMBIAR FORMATO / RENDERIZAR
+// ─────────────────────────────────────────────────────────
 function cambiarFormato(formato) {
     if (!pedidoActual) return;
 
-    const areaImpresion = document.getElementById('printable-area');
-    const emptyState = document.getElementById('empty-state');
+    document.querySelectorAll(".format-btn").forEach(b => b.classList.remove("active"));
+    const btn = document.querySelector(`[onclick="cambiarFormato('${formato}')"]`);
+    if (btn) btn.classList.add("active");
 
-    // Manejo de visibilidad
-    if(emptyState) emptyState.classList.add('hidden');
-    areaImpresion.classList.remove('hidden');
+    document.getElementById("empty-state")?.classList.add("hidden");
+    const area = document.getElementById("printable-area");
+    area.classList.remove("hidden");
 
-    // Reset de estilos de botones
-    document.querySelectorAll('.format-btn').forEach(btn => {
-        btn.classList.remove('active', 'border-blue-500', 'bg-blue-50');
-    });
+    const templates = {
+        ticket:       generarTicketHTML,
+        invoice:      generarNotaEntregaHTML,
+        "garantia-tlf": generarGarantiaTelefonosHTML,
+        contract:     generarContratoHTML,
+    };
 
-    // Resaltar botón seleccionado
-    if (event && event.currentTarget) {
-        event.currentTarget.classList.add('active', 'border-blue-500', 'bg-blue-50');
-    }
-
-    // Renderizado según selección
-    if (formato === 'ticket') {
-        areaImpresion.innerHTML = generarTicketHTML(pedidoActual);
-        areaImpresion.className = "w-[300px] p-4 bg-white mx-auto text-xs font-mono border border-gray-200 shadow-xl";
-    } else if (formato === 'invoice') {
-        areaImpresion.innerHTML = generarNotaEntregaHTML(pedidoActual);
-        areaImpresion.className = "w-[794px] min-h-[1123px] p-12 bg-white mx-auto border border-gray-200 shadow-xl";
-    } else if (formato === 'garantia-tlf') {
-        areaImpresion.innerHTML = generarGarantiaTelefonosHTML(pedidoActual);
-        areaImpresion.className = "w-[850px] p-10 bg-white mx-auto border-2 border-black shadow-xl";
-    } else if (formato === 'contract') {
-        areaImpresion.innerHTML = generarContratoHTML(pedidoActual);
-        areaImpresion.className = "w-[794px] p-20 bg-white mx-auto border border-gray-200 shadow-xl";
-    }
+    area.innerHTML = (templates[formato] || generarNotaEntregaHTML)(pedidoActual);
 }
 
-/**
- * 4. FUNCIÓN DE IMPRESIÓN
- */
+// ─────────────────────────────────────────────────────────
+// 4. IMPRIMIR
+// ─────────────────────────────────────────────────────────
 function ejecutarImpresion() {
-    const area = document.getElementById('printable-area');
-    if (!area || area.innerHTML.trim() === "") return;
-
-    setTimeout(() => {
-        window.print();
-    }, 250);
+    if (!pedidoActual) return;
+    window.print();
 }
 
-/**
- * 5. TEMPLATES DE DOCUMENTOS
- * Genera el Certificado de Garantía para teléfonos
- */
+// ─────────────────────────────────────────────────────────
+// HELPER: Logo del tenant
+// Usa logo_url si existe, si no genera iniciales elegantes
+// Funciona tanto en garantías como notas de entrega
+// ─────────────────────────────────────────────────────────
+function renderLogoHeader(empresa, alignRight = false) {
+    const logoUrl = empresa.logo_url || empresa.tenant_logo || null;
+    const nombre = empresa.name || empresa.tenant_name_snapshot || "EMPRESA";
+    const iniciales = nombre.split(" ").map(w => w[0]).join("").substring(0, 2).toUpperCase();
+
+    const logoHTML = logoUrl
+        ? `<img src="${logoUrl}" alt="${nombre}" style="max-height:60px; max-width:160px; object-fit:contain;">`
+        : `<div style="display:inline-flex; align-items:center; justify-content:center;
+                       width:60px; height:60px; border-radius:12px;
+                       background:#1e293b; color:#fff;
+                       font-size:1.4rem; font-weight:900; font-style:italic;">${iniciales}</div>`;
+
+    return `<div style="text-align:${alignRight ? "right" : "left"};">${logoHTML}</div>`;
+}
+
+// ─────────────────────────────────────────────────────────
+// TEMPLATE 1: Garantía de Teléfonos (mejorada con logo)
+// ─────────────────────────────────────────────────────────
 function generarGarantiaTelefonosHTML(data) {
     const empresa = data.tenant || {};
-    const cliente = data.customer || { 
-        name: data.customer_name || 'N/A', 
-        doc: data.customer_doc || 'N/A', 
-        phone: data.customer_phone || 'N/A', 
-        address: data.customer_address || 'N/A' 
+    const cliente = data.customer || {
+        name: data.customer_name || "N/A",
+        doc: data.customer_doc || "N/A",
+        phone: data.customer_phone || "N/A",
+        address: data.customer_address || "N/A",
     };
-    
-    // Tomamos el primer item del pedido/factura para los datos del equipo
-    const item = data.items && data.items.length > 0 ? data.items[0] : {};
-    const vendedor = data.user_name || localStorage.getItem("user_full_name") || "ADMINISTRADOR";
-    
-    const subtotal = data.items.reduce((acc, it) => acc + parseFloat(it.total || 0), 0);
-    const descuento = parseFloat(data.discount_amount || data.discount || 0);
-    const totalNeto = subtotal - descuento;
+    const item = data.items?.[0] || {};
+    const vendedor = data.user_name || localStorage.getItem("agromedic_user")
+        ? JSON.parse(localStorage.getItem("agromedic_user") || "{}").name || "ADMINISTRADOR"
+        : "ADMINISTRADOR";
+
+    const subtotal = (data.items || []).reduce((s, it) => s + parseFloat(it.total || 0), 0);
+    const descuento = parseFloat(data.discount_amount || 0);
+    const total = subtotal - descuento;
+
+    const checks = ["Cámara principal","Cámara frontal","Flash","Botones","Wifi",
+                    "Puerto de carga","Micrófono/Corneta","Pantalla","Face ID/Touch ID",
+                    "Sensor Proximidad","Red Celular"];
 
     return `
-        <div class="p-2 border-2 border-black bg-white">
-            <div class="flex justify-between items-start mb-4">
-                <div>
-                    <h1 class="text-5xl font-black italic text-red-600 leading-none tracking-tighter uppercase">${empresa.name || 'EMPRESA'}</h1>
-                    <p class="text-[10px] font-bold tracking-[0.2em] text-gray-500">ELECTRONIC STORE & TECHNICAL SERVICE</p>
-                    ${empresa.instagram ? `<p class="text-[11px] font-bold text-red-600 italic">IG: @${empresa.instagram}</p>` : ''}
-                </div>
-                <div class="text-right text-[10px] leading-tight font-bold">
-                    <p class="text-sm underline mb-1 uppercase italic">Certificado de Garantía</p>
-                    <p>FECHA: ${new Date(data.created_at || Date.now()).toLocaleDateString()}</p>
-                    <p>ORDEN Nro: #00${data.id}</p>
-                    <p>RIF: ${empresa.rif || 'S/RIF'}</p>
-                    <p>${empresa.address || 'Valencia, Venezuela'}</p>
-                </div>
-            </div>
+    <div style="width:700px; padding:16px; border:2px solid #000; background:#fff; font-family:'Arial',sans-serif;">
 
-            <div class="bg-black text-white text-[10px] font-bold text-center py-1 uppercase mb-2">Información del Cliente</div>
-            <div class="grid grid-cols-2 gap-x-10 gap-y-2 text-[11px] mb-4 px-2">
-                <div class="flex border-b border-gray-300 pb-1 font-semibold italic">Nombre: <span class="ml-2 font-normal not-italic uppercase">${cliente.name}</span></div>
-                <div class="flex border-b border-gray-300 pb-1 font-semibold italic">ID/RIF: <span class="ml-2 font-normal not-italic">${cliente.doc || cliente.document || 'S/D'}</span></div>
-                <div class="flex border-b border-gray-300 pb-1 font-semibold italic">Dirección: <span class="ml-2 font-normal not-italic text-[10px]">${cliente.address || 'N/A'}</span></div>
-                <div class="flex border-b border-gray-300 pb-1 font-semibold italic">Teléfono: <span class="ml-2 font-normal not-italic">${cliente.phone}</span></div>
-            </div>
-
-            <div class="bg-gray-800 text-white text-[10px] font-bold text-center py-1 uppercase mb-2">Información del Equipo</div>
-            <div class="grid grid-cols-2 gap-x-10 gap-y-2 text-[11px] mb-4 px-2">
-                <div class="flex border-b border-gray-300 pb-1 font-semibold italic">Modelo: <span class="ml-2 font-normal not-italic font-bold text-blue-800 uppercase">${item.product_name || item.product_name_snapshot || 'N/A'}</span></div>
-                <div class="flex border-b border-gray-300 pb-1 font-semibold italic">
-                    IMEI/Serial: <span class="ml-2 font-mono text-gray-700 font-bold uppercase">${item.imei_snapshot || item.imei || 'S/N'}</span>
-                </div>
-                <div class="flex border-b border-gray-300 pb-1 font-semibold italic">Capacidad: <span class="ml-2 font-normal not-italic">${item.capacity || 'N/A'}</span></div>
-                <div class="flex border-b border-gray-300 pb-1 font-semibold italic font-bold">Total: <span class="ml-2 text-red-600 font-black text-sm">$${totalNeto.toFixed(2)}</span></div>
-            </div>
-
-            <div class="flex gap-4">
-                <div class="w-1/2">
-                    <table class="w-full text-[9px] border-collapse border border-black">
-                        <thead>
-                            <tr class="bg-gray-100 uppercase text-[8px] font-black">
-                                <th class="border border-black p-1 text-left italic">Funcionalidad / Componente</th>
-                                <th class="border border-black p-1 w-8">SI</th>
-                                <th class="border border-black p-1 w-8">NO</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${['Cámara principal', 'Cámara frontal', 'Flash', 'Botones', 'Wifi', 'Puerto de carga', 'Microfono/Corneta', 'Pantalla', 'Face ID/Touch ID', 'Sensor Proximidad', 'Red Celular'].map(f => `
-                                <tr class="border-b border-black">
-                                    <td class="p-1 border-r border-black font-bold uppercase italic">${f}</td>
-                                    <td class="border-r border-black text-center text-[7px]"></td>
-                                    <td></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="w-1/2 flex flex-col justify-between">
-                    <div class="border border-black p-2 bg-gray-50 text-[9px]">
-                        <p class="font-black underline uppercase text-[8px] mb-1">Términos del Servicio:</p>
-                        <p class="italic leading-tight text-justify">1. PANTALLAS: No poseen garantía una vez retirado el equipo del local.</p>
-                        <p class="italic leading-tight text-justify">2. La garantía cubre fallas de fábrica por el periodo estipulado. Equipos mojados, golpeados, con sellos rotos o manipulados por terceros anulan este certificado.</p>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4 mt-6">
-                        <div class="text-center">
-                            <div class="w-16 h-20 border-2 border-black mx-auto mb-1 flex items-center justify-center text-[7px] text-gray-300 italic font-black uppercase">Huella</div>
-                            <div class="border-t border-black text-[9px] font-black uppercase pt-1">Cliente</div>
-                        </div>
-                        <div class="text-center flex flex-col justify-end">
-                            <p class="text-[11px] font-black italic border-b border-black pb-1 mb-1 uppercase">${vendedor}</p>
-                            <div class="text-[9px] font-black uppercase pt-1">Firma Vendedor</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mt-4 text-center border-t border-black pt-2 text-[10px] font-black flex justify-between px-2">
-                <span class="text-red-600 italic">IG: @${empresa.instagram || ''}</span>
-                <span>CONTACTO: ${empresa.phone || ''}</span>
-            </div>
+      <!-- HEADER -->
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; border-bottom:2px solid #000; padding-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          ${renderLogoHeader(empresa)}
+          <div>
+            <div style="font-size:1.6rem; font-weight:900; font-style:italic; color:#dc2626; line-height:1; text-transform:uppercase;">${empresa.name || "EMPRESA"}</div>
+            ${empresa.instagram ? `<div style="font-size:11px; font-weight:700; color:#dc2626;">IG: @${empresa.instagram}</div>` : ""}
+            ${empresa.phone ? `<div style="font-size:10px; color:#666;">Tel: ${empresa.phone}</div>` : ""}
+          </div>
         </div>
-    `;
+        <div style="text-align:right; font-size:10px; line-height:1.6; font-weight:700;">
+          <div style="font-size:12px; text-decoration:underline; text-transform:uppercase; font-style:italic; margin-bottom:4px;">Certificado de Garantía</div>
+          <div>FECHA: ${new Date(data.created_at || Date.now()).toLocaleDateString("es-VE")}</div>
+          <div>ORDEN: #${String(data.order_number || data.id).padStart(4, "0")}</div>
+          ${empresa.rif ? `<div>RIF: ${empresa.rif}</div>` : ""}
+          ${empresa.address ? `<div style="font-size:9px; max-width:180px; text-align:right;">${empresa.address}</div>` : ""}
+        </div>
+      </div>
+
+      <!-- CLIENTE -->
+      <div style="background:#000; color:#fff; font-size:10px; font-weight:700; text-align:center; padding:4px; text-transform:uppercase; margin-bottom:8px;">Información del Cliente</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 30px; font-size:11px; margin-bottom:12px; padding:0 6px;">
+        <div style="border-bottom:1px solid #ddd; padding-bottom:3px;"><b style="font-style:italic;">Nombre:</b> <span style="text-transform:uppercase;">${cliente.name}</span></div>
+        <div style="border-bottom:1px solid #ddd; padding-bottom:3px;"><b style="font-style:italic;">ID/RIF:</b> ${cliente.doc || cliente.document || "S/D"}</div>
+        <div style="border-bottom:1px solid #ddd; padding-bottom:3px;"><b style="font-style:italic;">Dirección:</b> <span style="font-size:10px;">${cliente.address || "N/A"}</span></div>
+        <div style="border-bottom:1px solid #ddd; padding-bottom:3px;"><b style="font-style:italic;">Teléfono:</b> ${cliente.phone || "N/A"}</div>
+      </div>
+
+      <!-- EQUIPO -->
+      <div style="background:#374151; color:#fff; font-size:10px; font-weight:700; text-align:center; padding:4px; text-transform:uppercase; margin-bottom:8px;">Información del Equipo</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 30px; font-size:11px; margin-bottom:12px; padding:0 6px;">
+        <div style="border-bottom:1px solid #ddd; padding-bottom:3px;"><b style="font-style:italic;">Modelo:</b> <span style="color:#1d4ed8; font-weight:700; text-transform:uppercase;">${item.product_name || item.product_name_snapshot || "N/A"}</span></div>
+        <div style="border-bottom:1px solid #ddd; padding-bottom:3px;"><b style="font-style:italic;">IMEI/Serial:</b> <span style="font-family:monospace; font-weight:700;">${item.imei_snapshot || item.imei || "S/N"}</span></div>
+        <div style="border-bottom:1px solid #ddd; padding-bottom:3px;"><b style="font-style:italic;">Capacidad:</b> ${item.capacity || "N/A"}</div>
+        <div style="border-bottom:1px solid #ddd; padding-bottom:3px;"><b style="font-weight:700;">TOTAL:</b> <span style="color:#dc2626; font-weight:900; font-size:1rem;">$${total.toFixed(2)}</span></div>
+      </div>
+
+      <!-- CHECKLIST + TÉRMINOS -->
+      <div style="display:flex; gap:14px;">
+        <div style="flex:1;">
+          <table style="width:100%; border-collapse:collapse; font-size:9px;">
+            <thead><tr style="background:#f1f5f9;">
+              <th style="border:1px solid #000; padding:4px 6px; text-align:left; font-style:italic; text-transform:uppercase; font-size:8px;">Funcionalidad</th>
+              <th style="border:1px solid #000; padding:4px; width:28px;">SI</th>
+              <th style="border:1px solid #000; padding:4px; width:28px;">NO</th>
+            </tr></thead>
+            <tbody>
+              ${checks.map(f => `<tr>
+                <td style="border:1px solid #000; padding:3px 5px; font-weight:600; font-style:italic; text-transform:uppercase;">${f}</td>
+                <td style="border:1px solid #000;"></td>
+                <td style="border:1px solid #000;"></td>
+              </tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+          <div style="border:1px solid #000; padding:8px; background:#f9fafb; font-size:9px;">
+            <div style="font-weight:900; text-decoration:underline; text-transform:uppercase; font-size:8px; margin-bottom:5px;">Términos del Servicio:</div>
+            <p style="font-style:italic; text-align:justify; margin:2px 0; line-height:1.4;">1. PANTALLAS: No poseen garantía una vez retirado el equipo del local.</p>
+            <p style="font-style:italic; text-align:justify; margin:2px 0; line-height:1.4;">2. La garantía cubre fallas de fábrica. Equipos mojados, golpeados o manipulados por terceros anulan este certificado.</p>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px;">
+            <div style="text-align:center;">
+              <div style="width:70px; height:80px; border:2px solid #000; margin:0 auto 4px; display:flex; align-items:center; justify-content:center; font-size:7px; color:#ccc; font-style:italic; font-weight:700; text-transform:uppercase;">Huella</div>
+              <div style="border-top:1px solid #000; font-size:9px; font-weight:900; text-transform:uppercase; padding-top:3px;">Cliente</div>
+            </div>
+            <div style="text-align:center; display:flex; flex-direction:column; justify-content:flex-end;">
+              <div style="font-size:11px; font-weight:900; font-style:italic; border-bottom:1px solid #000; padding-bottom:4px; margin-bottom:3px; text-transform:uppercase;">${vendedor}</div>
+              <div style="font-size:9px; font-weight:900; text-transform:uppercase;">Firma Vendedor</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div style="margin-top:10px; border-top:1px solid #000; padding-top:6px; display:flex; justify-content:space-between; font-size:10px; font-weight:700;">
+        ${empresa.instagram ? `<span style="color:#dc2626; font-style:italic;">IG: @${empresa.instagram}</span>` : "<span></span>"}
+        ${empresa.phone ? `<span>Tel: ${empresa.phone}</span>` : "<span></span>"}
+        ${empresa.address ? `<span style="font-size:9px; color:#666;">${empresa.address}</span>` : "<span></span>"}
+      </div>
+    </div>`;
 }
 
+// ─────────────────────────────────────────────────────────
+// TEMPLATE 2: Recibo Térmico / Ticket
+// ─────────────────────────────────────────────────────────
 function generarTicketHTML(data) {
     const empresa = data.tenant || {};
-    const subtotal = data.items.reduce((acc, it) => acc + parseFloat(it.total), 0);
-    const descuento = parseFloat(data.discount || 0);
+    const items = data.items || [];
+    const subtotal = items.reduce((s, it) => s + parseFloat(it.total || 0), 0);
+    const descuento = parseFloat(data.discount_amount || 0);
     const total = subtotal - descuento;
 
     return `
-        <div class="text-center uppercase">
-            <h3 class="font-bold">${empresa.name || 'RECIBO'}</h3>
-            <p class="text-[10px]">${empresa.rif || ''}</p>
-            <p>NOTA DE ENTREGA #00${data.id}</p>
-            <p>----------------------------</p>
+    <div style="width:300px; padding:16px; font-family:'Courier New',monospace; background:#fff; font-size:12px;">
+      <div style="text-align:center; margin-bottom:12px;">
+        ${empresa.logo_url || empresa.tenant_logo
+            ? `<img src="${empresa.logo_url || empresa.tenant_logo}" style="max-height:50px; margin:0 auto 6px; display:block;">`
+            : `<div style="font-size:1.3rem; font-weight:900;">${empresa.name || "RECIBO"}</div>`}
+        <div style="font-weight:900; text-transform:uppercase;">${empresa.name || "EMPRESA"}</div>
+        ${empresa.rif ? `<div>${empresa.rif}</div>` : ""}
+        ${empresa.address ? `<div style="font-size:10px;">${empresa.address}</div>` : ""}
+        <div style="margin-top:4px;">NOTA DE ENTREGA</div>
+        <div>Nro: #${String(data.order_number || data.id).padStart(5, "0")}</div>
+        <div>${new Date(data.created_at || Date.now()).toLocaleDateString("es-VE")}</div>
+      </div>
+      <div style="border-top:1px dashed #000; border-bottom:1px dashed #000; padding:6px 0; margin-bottom:8px;">
+        <div>Cliente: ${data.customer?.name || data.customer_name}</div>
+        ${data.customer?.phone ? `<div>Tel: ${data.customer.phone}</div>` : ""}
+      </div>
+      ${items.map(it => `
+        <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+          <span style="max-width:200px; overflow:hidden;">${it.qty}x ${(it.product_name || "").substring(0, 18)}</span>
+          <span>$${parseFloat(it.total).toFixed(2)}</span>
         </div>
-        <div class="my-2 uppercase">
-            <p>Cliente: ${data.customer_name}</p>
-            <p>Fecha: ${new Date(data.created_at).toLocaleDateString()}</p>
+        ${it.imei_snapshot ? `<div style="font-size:10px; color:#666; margin-bottom:3px;">IMEI: ${it.imei_snapshot}</div>` : ""}
+      `).join("")}
+      <div style="border-top:1px dashed #000; margin-top:6px; padding-top:6px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>Subtotal:</span><span>$${subtotal.toFixed(2)}</span>
         </div>
-        <p>----------------------------</p>
-        ${data.items.map(it => `<div class="flex justify-between text-[10px]"><span>${it.qty} x ${it.product_name.substring(0,15)}</span><span>$${parseFloat(it.total).toFixed(2)}</span></div>`).join('')}
-        <p>----------------------------</p>
-        <div class="flex justify-between"><span>SUBTOTAL:</span><span>$${subtotal.toFixed(2)}</span></div>
-        ${descuento > 0 ? `<div class="flex justify-between text-red-600 font-bold"><span>DESC:</span><span>-$${descuento.toFixed(2)}</span></div>` : ''}
-        <div class="flex justify-between font-bold text-sm"><span>TOTAL:</span><span>$${total.toFixed(2)}</span></div>
-        <p class="mt-4 text-center uppercase">Gracias por su compra</p>
-    `;
+        ${descuento > 0 ? `<div style="display:flex; justify-content:space-between; color:#dc2626; font-weight:700;">
+          <span>Descuento:</span><span>-$${descuento.toFixed(2)}</span>
+        </div>` : ""}
+        <div style="display:flex; justify-content:space-between; font-weight:900; font-size:1.1rem; border-top:1px solid #000; margin-top:4px; padding-top:4px;">
+          <span>TOTAL:</span><span>$${total.toFixed(2)}</span>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:12px; font-size:11px;">
+        <div>¡Gracias por su compra!</div>
+        ${empresa.instagram ? `<div>@${empresa.instagram}</div>` : ""}
+      </div>
+    </div>`;
 }
 
+// ─────────────────────────────────────────────────────────
+// TEMPLATE 3: Nota de Entrega A4 (mejorada con logo)
+// ─────────────────────────────────────────────────────────
 function generarNotaEntregaHTML(data) {
     const empresa = data.tenant || {};
-    const subtotal = data.items.reduce((acc, it) => acc + parseFloat(it.total), 0);
-    const descuento = parseFloat(data.discount || 0);
-    const totalFinal = subtotal - descuento;
+    const cliente = data.customer || { name: data.customer_name || "N/A" };
+    const items = data.items || [];
+    const subtotal = items.reduce((s, it) => s + parseFloat(it.total || 0), 0);
+    const descuento = parseFloat(data.discount_amount || 0);
+    const total = subtotal - descuento;
 
     return `
-        <div class="flex justify-between border-b-2 border-black pb-4 mb-8">
-            <div>
-                <h1 class="text-3xl font-black italic uppercase">${empresa.name || 'EMPRESA'}</h1>
-                <p class="text-sm font-bold">${empresa.rif || ''}</p>
-                <p class="text-xs">${empresa.address || 'Valencia, Venezuela'}</p>
-            </div>
-            <div class="text-right">
-                <p class="font-bold">NOTA DE ENTREGA</p>
-                <p>Nro: #000${data.id}</p>
-                <p>Fecha: ${new Date(data.created_at).toLocaleDateString()}</p>
-            </div>
+    <div style="width:700px; padding:40px; background:#fff; font-family:'Arial',sans-serif;">
+
+      <!-- HEADER -->
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #0f172a; padding-bottom:20px; margin-bottom:28px;">
+        <div style="display:flex; align-items:center; gap:16px;">
+          ${renderLogoHeader(empresa)}
+          <div>
+            <div style="font-size:1.5rem; font-weight:900; color:#0f172a;">${empresa.name || "EMPRESA"}</div>
+            ${empresa.rif ? `<div style="font-size:12px; color:#64748b; font-weight:600;">RIF: ${empresa.rif}</div>` : ""}
+            ${empresa.address ? `<div style="font-size:11px; color:#94a3b8;">${empresa.address}</div>` : ""}
+            ${empresa.phone ? `<div style="font-size:11px; color:#94a3b8;">Tel: ${empresa.phone}</div>` : ""}
+          </div>
         </div>
-        <div class="mb-8 p-4 bg-gray-50 border border-gray-200">
-            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cliente</p>
-            <p class="text-xl font-black italic">${data.customer_name}</p>
+        <div style="text-align:right;">
+          <div style="font-size:1rem; font-weight:900; text-transform:uppercase; color:#0f172a; letter-spacing:0.1em;">Nota de Entrega</div>
+          <div style="font-size:1.4rem; font-weight:900; color:#2563eb;">#${String(data.order_number || data.id).padStart(5, "0")}</div>
+          <div style="font-size:12px; color:#64748b;">Fecha: ${new Date(data.created_at || Date.now()).toLocaleDateString("es-VE")}</div>
+          <div style="font-size:11px; color:#94a3b8; margin-top:4px;">Estado: ${data.status || "CONFIRMADO"}</div>
         </div>
-        <table class="w-full text-left mb-8">
-            <thead class="border-y border-black uppercase text-xs">
-                <tr><th class="py-2">Descripción del Producto</th><th class="text-right py-2">Cant.</th><th class="text-right py-2">Total</th></tr>
-            </thead>
-            <tbody>
-                ${data.items.map(it => `
-                    <tr class="border-b border-gray-100">
-                        <td class="py-4 italic">
-                            <div class="font-bold uppercase">${it.product_name}</div>
-                            ${it.imei_snapshot ? `<div class="text-[10px] text-gray-500 not-italic font-mono">IMEI: ${it.imei_snapshot}</div>` : ''}
-                        </td>
-                        <td class="text-right">${it.qty}</td>
-                        <td class="text-right font-black">$${parseFloat(it.total).toFixed(2)}</td>
-                    </tr>`).join('')}
-            </tbody>
-        </table>
-        <div class="text-right space-y-1">
-            <p class="text-sm">Subtotal: $${subtotal.toFixed(2)}</p>
-            ${descuento > 0 ? `<p class="text-sm text-red-600 font-bold italic">Descuento aplicado: -$${descuento.toFixed(2)}</p>` : ''}
-            <div class="text-3xl font-black italic pt-2 border-t border-black">TOTAL NETO: $${totalFinal.toFixed(2)}</div>
+      </div>
+
+      <!-- CLIENTE -->
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:28px;">
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:#94a3b8; margin-bottom:6px;">Facturado a</div>
+        <div style="font-size:1.2rem; font-weight:900; color:#0f172a;">${cliente.name}</div>
+        ${cliente.document || cliente.doc ? `<div style="font-size:12px; color:#64748b;">CI/RIF: ${cliente.document || cliente.doc}</div>` : ""}
+        ${cliente.phone ? `<div style="font-size:12px; color:#64748b;">Tel: ${cliente.phone}</div>` : ""}
+        ${cliente.address ? `<div style="font-size:12px; color:#64748b;">${cliente.address}</div>` : ""}
+      </div>
+
+      <!-- TABLA DE ITEMS -->
+      <table style="width:100%; border-collapse:collapse; margin-bottom:24px; font-size:13px;">
+        <thead>
+          <tr style="border-top:2px solid #0f172a; border-bottom:2px solid #0f172a;">
+            <th style="padding:10px 8px; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#64748b;">Descripción</th>
+            <th style="padding:10px 8px; text-align:center; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#64748b;">Cant.</th>
+            <th style="padding:10px 8px; text-align:right; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#64748b;">Precio</th>
+            <th style="padding:10px 8px; text-align:right; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#64748b;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(it => `
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="padding:12px 8px;">
+                <div style="font-weight:700; color:#0f172a;">${it.product_name || it.product_name_snapshot}</div>
+                ${it.imei_snapshot ? `<div style="font-size:10px; font-family:monospace; color:#64748b; margin-top:2px;">IMEI: ${it.imei_snapshot}</div>` : ""}
+              </td>
+              <td style="padding:12px 8px; text-align:center; color:#475569;">${it.qty}</td>
+              <td style="padding:12px 8px; text-align:right; color:#475569;">$${parseFloat(it.unit_price).toFixed(2)}</td>
+              <td style="padding:12px 8px; text-align:right; font-weight:700; color:#0f172a;">$${parseFloat(it.total).toFixed(2)}</td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+
+      <!-- TOTALES -->
+      <div style="display:flex; justify-content:flex-end; margin-bottom:36px;">
+        <div style="min-width:240px;">
+          <div style="display:flex; justify-content:space-between; padding:6px 0; font-size:13px; color:#475569;">
+            <span>Subtotal</span><span>$${subtotal.toFixed(2)}</span>
+          </div>
+          ${descuento > 0 ? `<div style="display:flex; justify-content:space-between; padding:6px 0; font-size:13px; color:#dc2626; font-weight:700;">
+            <span>Descuento</span><span>-$${descuento.toFixed(2)}</span>
+          </div>` : ""}
+          <div style="display:flex; justify-content:space-between; padding:10px 0; font-size:1.3rem; font-weight:900; color:#0f172a; border-top:2px solid #0f172a; margin-top:4px;">
+            <span>TOTAL</span><span>$${total.toFixed(2)}</span>
+          </div>
         </div>
-    `;
+      </div>
+
+      <!-- FIRMAS -->
+      <div style="display:flex; justify-content:space-around; margin-top:40px;">
+        <div style="text-align:center; width:180px;">
+          <div style="border-top:1px solid #000; padding-top:8px; font-size:11px; font-weight:700; text-transform:uppercase; color:#475569;">Firma Vendedor</div>
+        </div>
+        <div style="text-align:center; width:180px;">
+          <div style="border-top:1px solid #000; padding-top:8px; font-size:11px; font-weight:700; text-transform:uppercase; color:#475569;">Firma Cliente</div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      ${empresa.instagram || empresa.phone ? `
+      <div style="margin-top:30px; border-top:1px solid #e2e8f0; padding-top:12px; text-align:center; font-size:10px; color:#94a3b8;">
+        ${empresa.instagram ? `IG: @${empresa.instagram}` : ""} ${empresa.phone ? `• Tel: ${empresa.phone}` : ""}
+      </div>` : ""}
+    </div>`;
 }
 
-
+// ─────────────────────────────────────────────────────────
+// TEMPLATE 4: Contrato de Compra-Venta
+// ─────────────────────────────────────────────────────────
 function generarContratoHTML(data) {
     const empresa = data.tenant || {};
+    const items = data.items || [];
+    const total = items.reduce((s, it) => s + parseFloat(it.total || 0), 0) - parseFloat(data.discount_amount || 0);
+
     return `
-        <h2 class="text-center font-bold text-xl underline mb-10 uppercase italic">Contrato de Compra y Venta</h2>
-        <p class="leading-relaxed mb-8 text-justify italic">
-            Por medio de la presente, se hace constar que <b>${empresa.name || 'EL VENDEDOR'}</b>, identificado con RIF <b>${empresa.rif || 'S/D'}</b>, transfiere la propiedad de la mercancía descrita en el pedido #${data.id} al cliente <b>${data.customer_name}</b>, quien declara recibirla a entera satisfacción en la ciudad de Valencia a los ${new Date().toLocaleDateString()}.
-        </p>
-        <div class="flex justify-between mt-40">
-            <div class="border-t border-black w-48 text-center pt-2 font-bold uppercase italic text-xs">Firma Vendedor</div>
-            <div class="border-t border-black w-48 text-center pt-2 font-bold uppercase italic text-xs">Firma Cliente</div>
+    <div style="width:700px; padding:60px; background:#fff; font-family:'Georgia',serif;">
+      <div style="text-align:center; margin-bottom:36px;">
+        ${empresa.logo_url || empresa.tenant_logo
+            ? `<img src="${empresa.logo_url || empresa.tenant_logo}" style="max-height:60px; margin:0 auto 12px; display:block;">`
+            : ""}
+        <div style="font-size:1.1rem; font-weight:700; text-transform:uppercase; letter-spacing:0.2em; text-decoration:underline; color:#0f172a;">
+          Contrato de Compra y Venta
         </div>
-    `;
+        <div style="font-size:12px; color:#64748b; margin-top:6px;">${empresa.name || ""} — ${new Date().toLocaleDateString("es-VE")}</div>
+      </div>
+
+      <p style="line-height:1.8; text-align:justify; font-size:14px; color:#1e293b; margin-bottom:20px;">
+        Por medio de la presente, se hace constar que <strong>${empresa.name || "EL VENDEDOR"}</strong>${empresa.rif ? `, identificado con RIF <strong>${empresa.rif}</strong>,` : ","} transfiere la propiedad de la(s) mercancía(s) descritas en el Pedido <strong>#${String(data.order_number || data.id).padStart(5, "0")}</strong> al cliente <strong>${data.customer?.name || data.customer_name}</strong>, quien declara recibirla a entera satisfacción.
+      </p>
+
+      <p style="line-height:1.8; text-align:justify; font-size:14px; color:#1e293b; margin-bottom:28px;">
+        El monto total de la presente operación asciende a la cantidad de <strong>$${total.toFixed(2)} USD</strong> (${total > 0 ? "dólares americanos" : "—"}), según el detalle de artículos del pedido referenciado.
+      </p>
+
+      <p style="font-size:13px; color:#64748b; margin-bottom:48px;">
+        Se firma en Valencia, Venezuela a los ${new Date().toLocaleDateString("es-VE", { day: "numeric", month: "long", year: "numeric" })}.
+      </p>
+
+      <div style="display:flex; justify-content:space-around;">
+        <div style="text-align:center; width:200px;">
+          <div style="height:60px;"></div>
+          <div style="border-top:1px solid #000; padding-top:8px; font-size:12px; font-weight:700; font-style:italic; text-transform:uppercase;">Firma Vendedor</div>
+          <div style="font-size:11px; color:#64748b;">${empresa.name || ""}</div>
+        </div>
+        <div style="text-align:center; width:200px;">
+          <div style="height:60px;"></div>
+          <div style="border-top:1px solid #000; padding-top:8px; font-size:12px; font-weight:700; font-style:italic; text-transform:uppercase;">Firma Cliente</div>
+          <div style="font-size:11px; color:#64748b;">${data.customer?.name || data.customer_name || ""}</div>
+        </div>
+      </div>
+    </div>`;
 }
 
-/**
- * 6. INICIALIZACIÓN AUTOMÁTICA (Blindada)
- */
+// ─────────────────────────────────────────────────────────
+// INIT — Leer orderId desde URL
+// ─────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Revisamos la URL (Ej: facturacion.html?orderId=105)
-    const urlParams = new URLSearchParams(window.location.search);
-    const orderId = urlParams.get('orderId');
-    
-    // 2. Si viene un ID en la URL, disparamos la magia
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get("orderId");
     if (orderId) {
-        console.log("ID detectado desde Pedidos:", orderId); // Para que lo veas en consola
-        
-        const inputBusqueda = document.getElementById('search-id');
-        
-        if (inputBusqueda) {
-            inputBusqueda.value = orderId;
-            
-            // Le damos un respiro de 100 milisegundos al navegador 
-            // para que termine de pintar la pantalla antes de buscar en la Base de Datos
-            setTimeout(() => {
-                buscarPedidoParaFacturar();
-            }, 100);
+        const input = document.getElementById("search-id");
+        if (input) {
+            input.value = orderId;
+            setTimeout(buscarPedidoParaFacturar, 150);
         }
     }
 });

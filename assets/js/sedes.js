@@ -14,8 +14,6 @@ async function loadBranches() {
         const res = await apiFetch("/branches");
         if (!res) return;
         
-        // Si res ya es el objeto de datos (depende de tu apiFetch en main.js)
-        // Probamos obtener data.data directamente
         branches = res.data || [];
         renderBranches();
         updatePlanBanner();
@@ -50,8 +48,7 @@ function renderBranches() {
     grid.innerHTML = branches.map(b => `
         <div class="branch-card ${b.is_active ? "" : "inactive"}">
             <div class="branch-name">
-                <i class="bi bi-geo-alt-fill" style="color:#3b82f6; margin-right:8px;"></i>
-                ${b.name}
+                <span><i class="bi bi-geo-alt-fill" style="color:#3b82f6; margin-right:8px;"></i>${b.name}</span>
             </div>
             <div class="branch-info">
                 ${b.address ? `<span><i class="bi bi-map"></i>${b.address}</span>` : ""}
@@ -62,7 +59,7 @@ function renderBranches() {
                 <span style="font-size: 0.8rem; color: #64748b;">
                     <i class="bi bi-people" style="margin-right:4px;"></i>${b.user_count || 0} usuario${b.user_count != 1 ? "s" : ""}
                 </span>
-                <span class="${b.is_active ? "badge-active" : "badge-inactive"}">
+                <span style="font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: ${b.is_active ? '#dcfce7' : '#fee2e2'}; color: ${b.is_active ? '#16a34a' : '#dc2626'};">
                     ${b.is_active ? "Activa" : "Inactiva"}
                 </span>
             </div>
@@ -105,13 +102,16 @@ function openModal() {
     document.getElementById("branch-phone").value = "";
     document.getElementById("branch-id").value = "";
 
-    modal.classList.add("open");
+    // ¡EL CAMBIO CRÍTICO ESTÁ AQUÍ! Removemos "hidden" en lugar de añadir "open"
+    modal.classList.remove("hidden");
+    
     setTimeout(() => document.getElementById("branch-name").focus(), 100);
 }
 
 function closeModal() {
     const modal = document.getElementById("branch-modal");
-    if (modal) modal.classList.remove("open");
+    // ¡EL CAMBIO CRÍTICO ESTÁ AQUÍ! Añadimos "hidden"
+    if (modal) modal.classList.add("hidden");
 }
 
 // ── Editar ─────────────────────────────────────────────
@@ -132,7 +132,7 @@ function editBranch(id) {
     document.getElementById("branch-phone").value = branch.phone || "";
     document.getElementById("branch-id").value = id;
 
-    modal.classList.add("open");
+    modal.classList.remove("hidden");
 }
 
 // ── Guardar (crear o editar) ──────────────────────────
@@ -166,7 +166,6 @@ async function saveBranch() {
             body: JSON.stringify(body) 
         });
 
-        // Si apiFetch falla o lanza error, ya se maneja en el catch o devuelve null
         if (!res || res.error) {
             throw new Error(res?.error || "Error al guardar");
         }
@@ -190,7 +189,7 @@ async function saveBranch() {
 
 // ── Desactivar ────────────────────────────────────────
 async function confirmDeactivate(id, name) {
-    if (!confirm(`¿Desactivar la sede "${name}"?\n\nNo se podrá usar para asignar usuarios. Los usuarios ya asignados permaneceren.`)) return;
+    if (!confirm(`¿Desactivar la sede "${name}"?\n\nNo se podrá usar para asignar usuarios. Los usuarios ya asignados permanecerán.`)) return;
 
     try {
         const res = await apiFetch(`/branches/${id}`, { method: "DELETE" });
@@ -209,8 +208,7 @@ async function confirmDeactivate(id, name) {
 }
 
 // ── Event Listeners ───────────────────────────────────
-
-// Cerrar modal al hacer clic fuera de la tarjeta (en el overlay)
+// Cerrar modal al hacer clic fuera (en el área gris oscura)
 document.getElementById("branch-modal").addEventListener("click", function(e) {
     if (e.target === this) closeModal();
 });
@@ -218,7 +216,7 @@ document.getElementById("branch-modal").addEventListener("click", function(e) {
 // Teclas rápidas
 document.addEventListener("keydown", function(e) {
     const modal = document.getElementById("branch-modal");
-    if (modal && modal.classList.contains("open")) {
+    if (modal && !modal.classList.contains("hidden")) {
         if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
             saveBranch();
         }
