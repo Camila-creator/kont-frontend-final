@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="../assets/js/kont-pdf.js"></script>
-```
+
 
   <style>
     /* ESTILOS PREMIUM PARA COMPRAS */
@@ -60,6 +60,33 @@
         overflow: hidden;
     }
     
+    /* 1. Cambiamos el guion para que coincida con el HTML */
+#purchase-modal, #pay-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.7) !important; /* Forzamos el fondo oscuro */
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* 2. Subimos el nivel a 9999 para enterrar al header */
+    z-index: 9999 !important; 
+    
+    padding: 20px;
+    opacity: 1;
+    transition: all 0.3s ease;
+}
+
+/* 3. Aseguramos que 'hidden' realmente lo quite de la vista */
+.modal.hidden {
+    display: none !important;
+    opacity: 0;
+    pointer-events: none;
+}
 
     .payment-row-card {
         background: white;
@@ -189,26 +216,6 @@
     font-weight: 600;
 }
 
-/* Este es el nombre que le diste en el HTML */
-#purchase_modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(15, 23, 42, 0.5); /* Color slate oscuro con transparencia */
-    backdrop-filter: blur(4px); /* Se ve pro */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 4000; /* Aquí es donde le ganas al header */
-    padding: 20px;
-}
-
-/* Para que se oculten cuando no los usas */
-.modal.hidden {
-    display: none !important;
-}
 
 /* El contenido interno del modal (el recuadro blanco) */
 .modal-content {
