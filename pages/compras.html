@@ -189,6 +189,41 @@
     font-weight: 600;
 }
 
+/* Este es el nombre que le diste en el HTML */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.5); /* Color slate oscuro con transparencia */
+    backdrop-filter: blur(4px); /* Se ve pro */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000; /* Aquí es donde le ganas al header */
+    padding: 20px;
+}
+
+/* Para que se oculten cuando no los usas */
+.modal.hidden {
+    display: none !important;
+}
+
+/* El contenido interno del modal (el recuadro blanco) */
+.modal-content {
+    position: relative;
+    background: white;
+    width: 100%;
+    max-width: 850px;
+    max-height: 90vh;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Para que el scroll se quede adentro */
+}
+
 /* Ajuste de ancho para que la tabla no se rompa */
 #purchases-table th, #purchases-table td {
     white-space: nowrap; /* Evita que el texto salte de línea */
@@ -243,6 +278,8 @@
     /* 4. Barra superior */
     .top-bar { flex-direction: column; align-items: stretch; }
     .search-box { max-width: 100%; min-width: auto; }
+
+    
 
     /* 5. EL MODAL (Ajuste de estructura para que NO se corten los botones) */
     .modal-content {
