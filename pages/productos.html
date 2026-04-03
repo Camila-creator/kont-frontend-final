@@ -6,6 +6,8 @@
   <title>Productos | Kont Admin</title>
   <link rel="stylesheet" href="../assets/css/main.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="../assets/js/kont-pdf.js"></script>
 
   <style>
     /* ESTILOS PREMIUM PARA PRODUCTOS */
@@ -42,7 +44,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #fdf2ff; /* Un toque púrpura suave para diferenciar "Producción" */
+      background: #fdf2ff;
       padding: 12px 15px;
       border-radius: 10px;
       border: 1px dashed #d8b4fe;
@@ -62,262 +64,204 @@
     input:checked + .slider { background-color: #a855f7; }
     input:checked + .slider:before { transform: translateX(22px); }
 
-    /* --- ESTILOS BASE DEL MODAL (Lo que te faltaba) --- */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(15, 23, 42, 0.65); /* Un azul muy oscuro con transparencia */
-    backdrop-filter: blur(4px); /* Efecto de desenfoque moderno */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    transition: all 0.3s ease;
-}
-
-.modal.hidden {
-    display: none !important;
-}
-
-.modal-content {
-    background: white;
-    width: 90%;
-    max-width: 500px; /* Bajamos de 600px a 500px para que se vea más compacto */
-    max-height: 90vh; /* Evita que se salga de la pantalla */
-    overflow-y: auto; /* Permite scroll si el formulario es largo */
-    padding: 25px;
-    border-radius: 20px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    position: relative;
-    animation: slideUp 0.3s ease-out;
-}
-
-/* Animación de entrada para que no aparezca de golpe */
-@keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-/* Ajuste fino para la grid del formulario */
-.form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px; /* Un poco más apretado para ahorrar espacio */
-}
-
-    /* =========================================================
-   ADAPTACIÓN PARA MÓVIL (PRODUCTOS)
-   ========================================================= */
-@media (max-width: 768px) {
-    /* 1. ESPACIADO Y BUSCADOR CENTRADO */
-    .page { padding: 10px !important; }
-    
-    .top-bar { 
-        display: flex; 
-        flex-direction: column; 
-        gap: 12px; 
-        margin-bottom: 20px;
-        align-items: center; /* Centra todo el contenido de la barra */
-    }
-
-    .search-box { 
-        width: 100%; /* Ocupa el ancho pero el contenido interno se alinea */
-        max-width: 400px; /* Para que no se vea infinito en pantallas anchas */
-        border-radius: 10px; 
-        border: 1.5px solid #e2e8f0;
-        height: 40px;
-        display: flex;
-        align-items: center;
-    }
-    
-    .search-box input {
-        text-align: center; /* Texto del buscador centrado */
-        font-size: 0.9rem;
-    }
-
-    /* BOTÓN AZUL KONT CENTRADO */
-    #btn-new-product {
+    /* --- ESTILOS BASE DEL MODAL --- */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
         width: 100%;
-        max-width: 400px;
-        height: 48px;
-        background: #3b82f6 !important;
-        border-radius: 12px;
-        font-weight: 700;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(4px);
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 10px;
-        border: none;
-        box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+        z-index: 9999;
+        transition: all 0.3s ease;
     }
 
-    /* 2. TARJETAS SIN SOBREPOSICIÓN */
-    #products-table thead { display: none; }
-    #products-table, #products-table tbody, #products-table tr, #products-table td {
-        display: block;
-        width: 100%;
-    }
-
-    #products-table tbody tr {
-        background: white;
-        margin-bottom: 8px;
-        padding: 12px;
-        border-radius: 12px;
-        border: 1px solid #edf2f7;
-        position: relative;
-    }
-
-    /* Fila 1: ID y Precio (Extremos) */
-    #products-table td:nth-child(1) { 
-        color: #3b82f6; 
-        font-size: 0.65rem; 
-        font-weight: 800;
-        margin-bottom: 2px;
-    }
-    
-    #products-table td:nth-child(5) { 
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: #1e293b;
-        width: auto;
-    }
-
-    /* Fila 2: Nombre (Largo) */
-    #products-table td:nth-child(2) { 
-        font-size: 0.95rem; 
-        font-weight: 700; 
-        color: #1e293b;
-        margin-bottom: 4px;
-        padding-right: 80px; /* Espacio para que no choque con el precio */
-    }
-
-    /* Fila 3: Meta info (Categoría y Proveedor) */
-    #products-table td:nth-child(3), 
-    #products-table td:nth-child(4) { 
-        display: inline-block;
-        font-size: 0.75rem;
-        color: #64748b;
-        width: auto;
-        margin-right: 10px;
-    }
-
-    /* Fila 4: Stock y Acciones */
-    #products-table td:nth-child(7) { 
-        margin-top: 8px;
-        width: auto;
-        display: inline-block;
-    }
-
-    #products-table td:last-child {
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid #f1f5f9;
-        display: flex;
-        justify-content: space-between; /* Botones repartidos */
-    }
-
-    .btn-icon {
-        flex: 1;
-        text-align: center;
-        font-size: 1.1rem;
-        padding: 5px;
-    }
-}
-
-@media (max-width: 768px) {
-    /* --- OPTIMIZACIÓN DE MODALES --- */
-
-    .modal {
-        padding: 10px; /* Evita que el modal pegue de los bordes del cel */
-        align-items: flex-start; /* Para que si el formulario es largo, empiece desde arriba */
-        padding-top: 20px;
+    .modal.hidden {
+        display: none !important;
     }
 
     .modal-content {
-        width: 100% !important;
-        max-width: 100% !important;
-        border-radius: 20px !important; /* Bordes más curvos, estilo app moderna */
-        padding: 20px 15px !important;
-        margin: 0;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        background: white;
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 25px;
+        border-radius: 20px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        position: relative;
+        animation: slideUp 0.3s ease-out;
     }
 
-    /* Título del modal más legible */
-    #supplier-modal-title, 
-    #recipe-modal-title,
-    #product-modal-title { 
-        font-size: 1.25rem !important;
-        text-align: center;
-        padding-bottom: 12px !important;
+    @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
     }
 
-    /* Formulario en una sola columna */
-    .form-grid {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 15px !important;
-    }
+    /* ADAPTACIÓN PARA MÓVIL (PRODUCTOS) */
+    @media (max-width: 768px) {
+        .page { padding: 10px !important; }
+        
+        .top-bar { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+            margin-bottom: 20px;
+            align-items: center;
+        }
 
-    /* Inputs más grandes para "dedos reales" */
-    .form-group input, 
-    .form-group select, 
-    .form-group textarea {
-        height: 48px; /* Altura táctil estándar */
-        font-size: 16px !important; /* Evita que iOS haga zoom automático al enfocar */
-        border-radius: 10px !important;
-        padding: 12px !important;
-    }
+        .search-box { 
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px; 
+            border: 1.5px solid #e2e8f0;
+            height: 40px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .search-box input {
+            text-align: center;
+            font-size: 0.9rem;
+        }
 
-    .form-group textarea {
-        height: auto !important; /* Deja que las notas crezcan según el contenido */
-        min-height: 80px;
-    }
+        #btn-new-product {
+            width: 100%;
+            max-width: 400px;
+            height: 48px;
+            background: #3b82f6 !important;
+            border-radius: 12px;
+            font-weight: 700;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            border: none;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+        }
 
-    /* Etiquetas (Labels) con más aire */
-    .form-group label {
-        font-size: 0.9rem;
-        margin-bottom: 4px;
-        color: #1e293b;
-    }
+        #products-table thead { display: none; }
+        #products-table, #products-table tbody, #products-table tr, #products-table td {
+            display: block;
+            width: 100%;
+        }
 
-    /* Botones de acción del modal (Guardar / Cancelar) */
-    .modal-actions {
-        display: flex !important;
-        flex-direction: column-reverse !important; /* El botón de guardar queda arriba, más cerca del pulgar */
-        gap: 12px !important;
-        margin-top: 25px !important;
-        padding-top: 20px !important;
-        border-top: 1px solid #f1f5f9;
-    }
+        #products-table tbody tr {
+            background: white;
+            margin-bottom: 8px;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #edf2f7;
+            position: relative;
+        }
 
-    .modal-actions button {
-        width: 100% !important;
-        height: 50px !important; /* Botones grandes y fáciles de presionar */
-        font-size: 1rem !important;
-        font-weight: 700 !important;
-        border-radius: 12px !important;
-        margin: 0 !important; /* Quitamos márgenes laterales */
-    }
+        #products-table td:nth-child(1) { 
+            color: #3b82f6; 
+            font-size: 0.65rem; 
+            font-weight: 800;
+            margin-bottom: 2px;
+        }
+        
+        #products-table td:nth-child(5) { 
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #1e293b;
+            width: auto;
+        }
 
-    /* Estilo específico para el botón principal en móvil */
-    .btn-primary {
-        background: #3b82f6 !important; /* Azul Kont */
-        color: white;
-    }
+        #products-table td:nth-child(2) { 
+            font-size: 0.95rem; 
+            font-weight: 700; 
+            color: #1e293b;
+            margin-bottom: 4px;
+            padding-right: 80px;
+        }
 
-    /* Ajuste para el Recipe Builder dentro del modal */
-    .recipe-builder {
-        padding: 10px !important;
-        border: 1px dashed #cbd5e1;
-        background: #f8fafc;
+        #products-table td:nth-child(3), 
+        #products-table td:nth-child(4) { 
+            display: inline-block;
+            font-size: 0.75rem;
+            color: #64748b;
+            width: auto;
+            margin-right: 10px;
+        }
+
+        #products-table td:nth-child(7) { 
+            margin-top: 8px;
+            width: auto;
+            display: inline-block;
+        }
+
+        #products-table td:last-child {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .btn-icon {
+            flex: 1;
+            text-align: center;
+            font-size: 1.1rem;
+            padding: 5px;
+        }
+
+        .modal {
+            padding: 10px;
+            align-items: flex-start;
+            padding-top: 20px;
+        }
+
+        .modal-content {
+            width: 100% !important;
+            max-width: 100% !important;
+            border-radius: 20px !important;
+            padding: 20px 15px !important;
+            margin: 0;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .form-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 15px !important;
+        }
+
+        .form-group input, 
+        .form-group select, 
+        .form-group textarea {
+            height: 48px;
+            font-size: 16px !important;
+            border-radius: 10px !important;
+            padding: 12px !important;
+        }
+
+        .modal-actions {
+            display: flex !important;
+            flex-direction: column-reverse !important;
+            gap: 12px !important;
+            margin-top: 25px !important;
+            padding-top: 20px !important;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .modal-actions button {
+            width: 100% !important;
+            height: 50px !important;
+            font-size: 1rem !important;
+            font-weight: 700 !important;
+            border-radius: 12px !important;
+            margin: 0 !important;
+        }
     }
-}
   </style>
 </head>
 <body>
@@ -334,14 +278,28 @@
       </div>
 
       <div class="top-bar">
-        <div class="search-box">
-          <i class="bi bi-search"></i>
-          <input type="text" id="search-product" placeholder="Buscar por nombre, categoría, proveedor o #...">
-        </div>
-        <button id="btn-new-product" class="btn-primary" style="padding: 10px 20px; font-weight: bold; border-radius: 8px;">
-          <i class="bi bi-plus-lg"></i> <span>Nuevo Producto</span>
-        </button>
-      </div>
+  <div class="search-box">
+    <i class="bi bi-search"></i>
+    <input type="text" id="search-product" placeholder="Buscar por nombre, categoría, proveedor o #...">
+  </div>
+  
+  <div style="display: flex; gap: 8px;">
+      <button class="btn-secondary" onclick="KontPDF.inventarioProductos(window._productos || [])" style="padding: 10px 15px; border-radius: 8px; font-weight: 600;">
+          <i class="bi bi-file-pdf"></i> PDF Inventario
+      </button>
+      <button class="btn-secondary" onclick="KontPDF.stockCriticoProductos(window._productos || [])" style="padding: 10px 15px; border-radius: 8px; font-weight: 600;">
+          <i class="bi bi-exclamation-triangle"></i> PDF Stock Crítico
+      </button>
+
+      <button class="btn-secondary" onclick="KontPDF.pedidos(window._pedidos || orders || [])" style="padding: 10px 15px; border-radius: 8px; font-weight: 600;">
+          <i class="bi bi-file-pdf"></i> PDF Pedidos
+      </button>
+  </div>
+
+  <button id="btn-new-product" class="btn-primary" style="padding: 10px 20px; font-weight: bold; border-radius: 8px;">
+    <i class="bi bi-plus-lg"></i> <span>Nuevo Producto</span>
+  </button>
+</div>
 
       <div class="card" style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); overflow-x: auto; border: 1px solid #e2e8f0;">
         <table class="table" id="products-table" style="width: 100%; border-collapse: collapse; text-align: left;">
@@ -371,7 +329,6 @@
 
     <form id="product-form">
       <input type="hidden" id="product-id">
-
       <div class="form-grid">
         <div class="form-group full-width">
           <label>Nombre del Producto *</label>
@@ -380,7 +337,7 @@
 
         <div class="form-group">
           <label>Categoría *</label>
-          <input type="text" id="product-category" list="category-list" placeholder="Ej: Electrónica, Insumos..." required autocomplete="off">
+          <input type="text" id="product-category" list="category-list" placeholder="Ej: Electrónica..." required autocomplete="off">
           <datalist id="category-list"></datalist>
         </div>
 
@@ -402,7 +359,6 @@
               <span class="slider"></span>
             </label>
           </div>
-          <small style="color: #8b5cf6; font-size: 0.7rem; margin-left: 5px;">* Si se marca, el costo se calculará sumando sus insumos.</small>
         </div>
 
         <div class="form-group">
@@ -417,36 +373,36 @@
         <div class="form-group">
           <div style="display: flex; justify-content: space-between;">
             <label>Costo de Compra ($) *</label>
-            <a href="#" id="view-recipe-link" class="hidden" style="font-size: 0.75rem; color: #8b5cf6; font-weight: 700; text-decoration: none;">
+            <a href="#" id="view-recipe-link" class="hidden" style="font-size: 0.75rem; color: #8b5cf6; font-weight: 700;">
               <i class="bi bi-receipt"></i> Ver Receta
             </a>
           </div>
-          <input type="number" id="product-cost" step="0.01" min="0" placeholder="0.00" required>
+          <input type="number" id="product-cost" step="0.01" min="0" required>
         </div>
 
         <div class="form-group">
-          <label>Precio Detalle / Retail ($) *</label>
-          <input type="number" id="product-price-retail" step="0.01" min="0" placeholder="0.00" required>
+          <label>Precio Detalle ($) *</label>
+          <input type="number" id="product-price-retail" step="0.01" min="0" required>
         </div>
 
         <div class="form-group">
           <label>Precio Mayorista ($) *</label>
-          <input type="number" id="product-price-mayor" step="0.01" min="0" placeholder="0.00" required>
+          <input type="number" id="product-price-mayor" step="0.01" min="0" required>
         </div>
 
         <div class="form-group">
           <label>Stock Actual *</label>
-          <input type="number" id="product-stock" step="0.01" min="0" placeholder="0" required>
+          <input type="number" id="product-stock" step="0.01" min="0" required>
         </div>
 
         <div class="form-group">
-          <label>Stock Mínimo (Alerta) *</label>
+          <label>Stock Mínimo *</label>
           <input type="number" id="product-min-stock" step="0.01" min="0" value="5">
         </div>
 
         <div class="form-group full-width" style="flex-direction: row; align-items: center; gap: 10px; background: #f8fafc; padding: 10px; border-radius: 8px;">
-          <input type="checkbox" id="product-has-expiry" style="width: 18px; height: 18px; cursor: pointer;">
-          <label for="product-has-expiry" style="margin: 0; cursor: pointer;">Este producto tiene fecha de vencimiento</label>
+          <input type="checkbox" id="product-has-expiry">
+          <label for="product-has-expiry" style="margin: 0;">Este producto tiene fecha de vencimiento</label>
         </div>
 
         <div class="form-group full-width hidden" id="expiry-wrap">
@@ -456,8 +412,8 @@
       </div>
 
       <div class="modal-actions" style="margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
-        <button type="button" id="btn-cancel" class="btn-secondary" style="border-radius: 8px;">Cancelar</button>
-        <button type="submit" class="btn-primary" style="border-radius: 8px;"><i class="bi bi-save"></i> Guardar Producto</button>
+        <button type="button" id="btn-cancel" class="btn-secondary">Cancelar</button>
+        <button type="submit" class="btn-primary"><i class="bi bi-save"></i> Guardar Producto</button>
       </div>
     </form>
   </div>
@@ -466,8 +422,8 @@
 <div class="modal hidden" id="confirm-modal">
   <div class="modal-content" style="max-width: 400px; text-align: center;">
     <div style="font-size: 3rem; color: #ef4444; margin-bottom: 10px;"><i class="bi bi-exclamation-circle"></i></div>
-    <h2 id="confirm-title" style="margin-top: 0;">Confirmar</h2>
-    <p id="confirm-message" class="text-soft" style="margin: 10px 0 20px;">¿Estás segura?</p>
+    <h2 id="confirm-title">Confirmar</h2>
+    <p id="confirm-message">¿Estás segura?</p>
     <div class="modal-actions" style="justify-content: center;">
       <button type="button" class="btn-secondary" id="confirm-cancel">No, cancelar</button>
       <button type="button" class="btn-danger" id="confirm-ok">Sí, confirmar</button>
@@ -477,8 +433,8 @@
 
 <div class="modal hidden" id="alert-modal">
   <div class="modal-content" style="max-width: 400px; text-align: center;">
-    <h2 id="alert-title" style="margin-top: 0;">Aviso</h2>
-    <p id="alert-message" class="text-soft" style="margin: 10px 0 20px;">Mensaje</p>
+    <h2 id="alert-title">Aviso</h2>
+    <p id="alert-message">Mensaje</p>
     <div class="modal-actions" style="justify-content: center;">
       <button type="button" class="btn-primary" id="alert-ok" style="width: 100%;">Entendido</button>
     </div>

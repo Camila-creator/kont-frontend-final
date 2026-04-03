@@ -119,6 +119,7 @@ function closeModal(){ modal?.classList.add("hidden"); }
 async function loadSuppliers(){
     const json = await apiFetch(API_SUPPLIERS);
     suppliers = json.data || [];
+    window._insumos = supplies;
     fillSupplierSelects();
 }
 

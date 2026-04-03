@@ -1,6 +1,5 @@
 /**
  * KONT ADMIN - Módulo de Cuentas por Cobrar (CxC)
- * Desarrollado por: Camila Oquendo
  */
 
 // ---------------- ESTRUCTURA DE DATOS Y DOM ----------------
@@ -14,13 +13,9 @@ const searchInput = document.getElementById("search-client");
 function render(response) {
   if (!listContainer) return;
   
-  // Limpiamos el contenedor para evitar duplicados
   listContainer.innerHTML = "";
-
-  // Normalizamos la entrada de datos (por si la API devuelve {data: []} o solo [])
   const data = Array.isArray(response) ? response : (response?.data || response?.result || []);
 
-  // ESTADO VACÍO: Si no hay deudas, mostramos un mensaje amigable
   if (data.length === 0) {
     listContainer.innerHTML = `
       <div style="text-align:center; padding: 60px 20px; color: #94a3b8;">
@@ -31,20 +26,17 @@ function render(response) {
     return;
   }
 
-  // RENDERIZADO DE TARJETAS
   data.forEach((item) => {
-    // Sanitización de números para evitar NaN en pantalla
     const pending = Number(item.pending || 0);
     const orders = Number(item.open_orders || 0);
     const customerId = item.customer_id;
     const customerName = item.customer_name || "Cliente Desconocido";
 
-    // Solo creamos la tarjeta si el saldo es relevante (mayor a 0.01)
     if (Math.abs(pending) > 0.01) {
       const card = document.createElement("div");
       card.className = "debtor-card";
       
-      // Estructura simplificada: Cliente | Saldo | Acción
+      // Añadimos un contenedor flex en los botones de acción para que queden juntos
       card.innerHTML = `
         <div class="client-info">
           <div class="client-avatar">
@@ -63,9 +55,13 @@ function render(response) {
           </span>
         </div>
 
-        <div class="card-action">
-          <a href="./pagos.html?customer_id=${customerId}" class="btn-action" title="Gestionar Cobro">
-            <i class="bi bi-chevron-right"></i>
+        <div class="card-action" style="display: flex; gap: 10px; align-items: center;">
+          <button onclick="exportarEstadoCuenta(${customerId})" class="btn-action" style="background: #e2e8f0; color: #475569; border: none; cursor: pointer; padding: 10px 12px; border-radius: 8px;" title="Descargar Estado de Cuenta">
+            <i class="bi bi-file-pdf" style="font-size: 1.2rem; color: #dc2626;"></i>
+          </button>
+          
+          <a href="./pagos.html?customer_id=${customerId}" class="btn-action" style="background: #f8fafc; border-radius: 8px; padding: 10px 12px; display:flex; align-items:center;" title="Gestionar Cobro">
+            <i class="bi bi-chevron-right" style="color: #3b82f6;"></i>
           </a>
         </div>
       `;
@@ -74,7 +70,6 @@ function render(response) {
     }
   });
 
-  // Si después de filtrar los montos cercanos a cero la lista quedó vacía
   if (listContainer.innerHTML === "") {
     render([]); 
   }
@@ -82,14 +77,12 @@ function render(response) {
 
 /**
  * Llama a la API para obtener los deudores.
- * Usa apiFetch definido en main.js para manejar tokens y errores.
  */
 async function loadCxC() {
   const query = (searchInput?.value || "").trim();
   const endpoint = `/cxc?q=${encodeURIComponent(query)}`;
 
   try {
-    // Mostramos un mini-loader si es necesario
     const response = await apiFetch(endpoint);
     render(response);
   } catch (error) {
@@ -102,21 +95,40 @@ async function loadCxC() {
   }
 }
 
+/**
+ * NUEVA FUNCIÓN: Obtiene la data detallada del cliente y genera su PDF
+ */
+async function exportarEstadoCuenta(clienteId) {
+  try {
+    // Aquí puedes agregar un pequeño alert o cambiar el ícono del botón a un "spinner" si la API tarda
+    const res = await apiFetch(`/customers/${clienteId}`);
+    const pedRes = await apiFetch(`/orders?customer_id=${clienteId}`);
+    const pagRes = await apiFetch(`/customer-payments?customer_id=${clienteId}`);
+
+    // Se asegura de pasar los arrays aunque la API responda vacío
+    KontPDF.estadoCuentaCliente(
+      res.data || res, 
+      pedRes.data || pedRes || [],
+      pagRes.data || pagRes || []
+    );
+  } catch (error) {
+    console.error("Error al exportar el estado de cuenta:", error);
+    alert("Hubo un error obteniendo los datos del cliente. Intenta nuevamente.");
+  }
+}
+
 // ---------------- INICIALIZACIÓN ----------------
 
 function init() {
-  // 1. Carga inicial de datos
   loadCxC();
 
-  // 2. Buscador con Debounce (para no saturar tu backend de Node.js)
   let searchTimeout = null;
   searchInput?.addEventListener("input", () => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       loadCxC();
-    }, 400); // 400ms es el "punto dulce" para que no se sienta lento pero no sature
+    }, 400); 
   });
 }
 
-// Esperamos a que el DOM esté listo
 document.addEventListener("DOMContentLoaded", init);

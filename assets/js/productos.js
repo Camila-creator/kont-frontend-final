@@ -64,6 +64,7 @@ async function loadSuppliers() {
 async function loadProducts() {
     const json = await apiFetch(API_PRODUCTS);
     products = json.data || [];
+    window._productos = products;
     updateCategoryDatalist();
 }
 

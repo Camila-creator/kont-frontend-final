@@ -6,6 +6,10 @@
   <title>Insumos | Kont Admin</title>
   <link rel="stylesheet" href="../assets/css/main.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+  <script src="../assets/js/kont-pdf.js"></script>
 
   <style>
     /* ESTILOS ESPECÍFICOS PARA INSUMOS (Adaptados para Kont) */
@@ -104,9 +108,17 @@
           </button>
         </div>
 
-        <button id="btn-new-raw" class="btn-primary" style="padding: 10px 20px; font-weight: bold; border-radius: 8px; white-space: nowrap;">
-          <i class="bi bi-plus-lg"></i> Nuevo Insumo
-        </button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button onclick="KontPDF.inventarioInsumos(window._insumos || [])" class="btn-secondary" style="padding: 10px 15px; border-radius: 8px; font-weight: 600;">
+                <i class="bi bi-file-pdf"></i> PDF
+            </button>
+            <button onclick="KontPDF.stockCriticoInsumos(window._insumos || [])" class="btn-secondary" style="padding: 10px 15px; border-radius: 8px; font-weight: 600; color: #dc2626; border-color: #fecaca;">
+                <i class="bi bi-exclamation-triangle"></i> Stock Crítico
+            </button>
+            <button id="btn-new-raw" class="btn-primary" style="padding: 10px 20px; font-weight: bold; border-radius: 8px; white-space: nowrap;">
+              <i class="bi bi-plus-lg"></i> Nuevo Insumo
+            </button>
+        </div>
       </div>
 
       <div class="card" style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); overflow-x: auto; border: 1px solid #e2e8f0;">
@@ -200,7 +212,7 @@
         <h3 style="margin-top: 0; color: #1e293b; font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">Gestionar Categorías</h3>
         
         <ul id="manage-cat-list" style="list-style: none; padding: 0; margin: 15px 0; max-height: 250px; overflow-y: auto;">
-            </ul>
+        </ul>
 
         <div class="modal-actions" style="margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 15px; justify-content: flex-end;">
             <button type="button" id="btn-close-manage-cat" class="btn-secondary" style="width: 100%;">Cerrar</button>

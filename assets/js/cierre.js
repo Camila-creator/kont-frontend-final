@@ -25,6 +25,12 @@ async function loadDia(fecha) {
         if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">Cargando movimientos...</td></tr>`;
         
         const res = await apiFetch(`${API_CAJA}/resumen?date=${fecha}`);
+
+        // --- INSERCIÓN DE DATOS GLOBALES ---
+        window._cajaDatosActuales = res.data;
+        window._cajaFechaActual = fecha;
+        // ------------------------------------
+
         const { ingresos, egresos, movimientos, estado, tasa } = res.data; 
 
         tasaDelDia = tasa || 0;
@@ -41,26 +47,14 @@ async function loadDia(fecha) {
                 </div>
             `;
         }
-
-        renderTable(movimientos || []);
-
-        // Bloqueo de UI si ya está cerrada (Tu lógica de bloqueo original)
-        const isCerrada = estado === 'CERRADA';
-        if (btnCloseRegister) {
-            btnCloseRegister.disabled = isCerrada;
-            btnCloseRegister.innerHTML = isCerrada 
-                ? `<i class="bi bi-lock-fill"></i> Caja Cerrada` 
-                : `<i class="bi bi-safe-fill"></i> Ejecutar Cierre`;
-            
-            btnCloseRegister.className = isCerrada ? "btn-disabled" : "btn-primary";
-            if (!isCerrada) btnCloseRegister.style.background = "#10b981";
-        }
-
-    } catch (err) {
-        console.error("Error cargando caja:", err);
-        if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #ef4444;">Error al cargar datos.</td></tr>`;
+        
+        // El resto de tu lógica de renderizado de movimientos...
+    } catch (error) {
+        console.error("Error al cargar el día:", error);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Error al cargar datos</td></tr>`;
     }
 }
+
 
 function renderTable(movimientos) {
     const tbody = document.getElementById("transactions-body");
@@ -217,6 +211,11 @@ async function init() {
             }
         });
     }
+}
+
+function exportarCierrePDF() {
+  if (!window._cajaDatosActuales) { alert("Carga un día primero."); return; }
+  KontPDF.cierreCaja(window._cajaDatosActuales, window._cajaFechaActual);
 }
 
 // Ejecutar cuando el DOM esté listo
