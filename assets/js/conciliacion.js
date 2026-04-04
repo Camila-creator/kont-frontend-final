@@ -19,7 +19,7 @@ async function loadReconciliations() {
 
 async function loadAccounts() {
   try {
-    const res = await apiFetch("/finance-accounts");
+    const res = await apiFetch("/finance/accounts");
     if (!res?.ok) return;
     accounts = (res.data || []).filter(a => a.is_active);
     const sel = document.getElementById("new-account");
