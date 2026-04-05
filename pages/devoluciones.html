@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="../assets/js/kont-excel.js"></script>
+  <script src="../assets/js/kont-excel.js"></script>
   <style>
     /* Variables de diseño */
     :root {
@@ -151,7 +151,7 @@
       
       .kpi-grid { grid-template-columns: 1fr; }
 
-      .data-table thead { display: none; } /* Hide headers on mobile */
+      .data-table thead { display: none; }
       
       .data-table tr {
         display: block;
@@ -187,26 +187,33 @@
     <main class="main-content" style="padding: 20px;">
 
       <div class="top-bar">
-  <div>
-    <h2>Devoluciones</h2>
-    <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Gestión de notas de crédito y retornos.</p>
-  </div>
-  <div style="display: flex; gap: 10px;">
-    <button class="btn-sm" onclick="exportarDevolucionesExcel()" style="border-color: #10b981; color: #059669; background: white; border-radius: 10px; padding: 0 15px;">
-      <i class="bi bi-file-earmark-excel"></i> Excel
-    </button>
-    
-    <button class="btn-primary" onclick="openNewModal()" style="border-radius: 10px; padding: 12px 20px;">
-      <i class="bi bi-plus-lg"></i> Nueva devolución
-    </button>
-  </div>
-</div>
+        <div>
+          <h2>Devoluciones</h2>
+          <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Gestión de notas de crédito y retornos.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          
+          <button class="btn-sm" onclick="KontExcel.devoluciones(creditNotes || [])" style="border-color: #10b981; color: #059669; background: white; border-radius: 10px; padding: 0 15px; font-weight: 700; cursor: pointer;">
+            <i class="bi bi-file-earmark-excel"></i> Excel
+          </button>
+          
+          <button class="btn-primary" onclick="openNewModal()" style="border-radius: 10px; padding: 12px 20px;">
+            <i class="bi bi-plus-lg"></i> Nueva devolución
+          </button>
+        </div>
+      </div>
 
       <div class="kpi-grid">
         <div class="kpi">
           <div class="kpi-label">Notas Emitidas</div>
           <div class="kpi-value" id="kpi-total">0</div>
         </div>
+        
+        <div class="kpi">
+          <div class="kpi-label">Estado: Emitidas</div>
+          <div class="kpi-value" id="kpi-emitidas" style="color: #0284c7;">0</div>
+        </div>
+
         <div class="kpi" style="border-left: 4px solid #3b82f6;">
           <div class="kpi-label">Monto Total</div>
           <div class="kpi-value" id="kpi-monto">$0.00</div>
@@ -248,6 +255,8 @@
       <button onclick="closeModal('new-modal')" style="background:none; border:none; font-size: 1.5rem; cursor:pointer; color:#94a3b8;">&times;</button>
     </div>
 
+    <div id="new-error" style="display:none; background:#fee2e2; color:#b91c1c; padding:12px; border-radius:10px; margin-bottom:20px; font-size:14px; border: 1px solid #fecaca;"></div>
+
     <div id="step-search">
       <div class="form-group">
         <label class="form-label" style="font-weight: 600;">Buscar por Nro. Pedido</label>
@@ -288,7 +297,7 @@
       </div>
 
       <div id="return-totals" style="background: #f1f5f9; padding: 15px; border-radius: 12px; margin-top: 20px;">
-        </div>
+      </div>
 
       <div class="modal-actions" style="margin-top: 24px; display: flex; gap: 12px;">
         <button class="btn-secondary" onclick="backToSearch()" style="flex: 1;">Volver</button>
@@ -296,6 +305,21 @@
           Confirmar Nota de Crédito
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="detail-modal">
+  <div class="modal-content" style="max-width:560px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 id="detail-title" style="margin:0;">Nota de Crédito</h2>
+        <button onclick="closeDetail()" style="background:none; border:none; font-size: 1.5rem; cursor:pointer; color:#94a3b8;">&times;</button>
+    </div>
+    <div id="detail-content"></div>
+    <div class="modal-actions" style="margin-top: 24px; display: flex; gap: 10px; justify-content: flex-end;">
+      <button class="btn-secondary" onclick="closeDetail()">Cerrar</button>
+      <button class="btn-sm" onclick="printCreditNote()" style="border-color:#0f172a;color:#0f172a; padding: 12px 20px; border-radius: 10px;"><i class="bi bi-printer"></i> Imprimir</button>
+      <button class="btn-sm" id="btn-cancel-cn" onclick="cancelCurrentCN()" style="border-color:#e2e8f0;color:#dc2626; padding: 12px 20px; border-radius: 10px;"><i class="bi bi-x-circle"></i> Anular</button>
     </div>
   </div>
 </div>
