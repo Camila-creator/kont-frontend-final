@@ -56,7 +56,10 @@ function openNewModal() {
   document.getElementById("search-order-id").focus();
 }
 
-function closeNewModal() { document.getElementById("new-modal").classList.add("hidden"); }
+function closeNewModal() { 
+  document.getElementById("new-modal").classList.add("hidden");
+  setTimeout(backToSearch, 300);
+}
 
 async function searchOrder() {
   const id = document.getElementById("search-order-id").value.trim();
@@ -367,14 +370,24 @@ function printCreditNote() {
   doc.save(`${cn.note_number}.pdf`);
 }
 
-// Cerrar modales al click fuera
-["new-modal","detail-modal"].forEach(id => {
-  document.getElementById(id)?.addEventListener("click", function(e) {
-    if (e.target === this) this.classList.add("hidden");
+// Cerrar modales al click fuera (mejorado)
+["new-modal", "detail-modal"].forEach(id => {
+  const modal = document.getElementById(id);
+  if (!modal) return;
+
+  modal.addEventListener("click", function(e) {
+    // Solo cerrar si el click es en el fondo oscuro (el contenedor con la clase modal)
+    // y NO en el modal-content.
+    if (e.target === this) {
+      this.classList.add("hidden");
+    }
   });
 });
 
 // Enter en búsqueda
-document.getElementById("search-order-id")?.addEventListener("keydown", e => {
-  if (e.key === "Enter") searchOrder();
-});
+const searchInput = document.getElementById("search-order-id");
+if (searchInput) {
+  searchInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") searchOrder();
+  });
+}
