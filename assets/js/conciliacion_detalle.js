@@ -375,17 +375,16 @@ async function doIgnore(lineId) {
 }
 
 async function undoMatch(lineId) {
-  // Para deshacer: re-marcar como PENDIENTE via match manual con type=manual y nota vacía
+  if (!reconData) return;
   try {
-    const res = await apiFetch(`/reconciliations/${reconData.id}/lines/${lineId}/match`, {
-      method: "PUT",
-      body: JSON.stringify({ payment_id: null, payment_type: "manual", note: "" }),
-    });
-    // Luego revertir a PENDIENTE — hacemos un hack: llamamos ignore y luego buscamos la fila
-    // Más limpio: endpoint dedicado — por ahora retornamos al estado pendiente via DB directo
-    // Para un MVP: simplemente recargamos
+    const res = await apiFetch(
+      `/reconciliations/${reconData.id}/lines/${lineId}/revert`,
+      { method: "PUT" }
+    );
+    if (!res?.ok) { alert(res?.error || "No se pudo revertir."); return; }
     await loadRecon(reconData.id);
     showLinesSection();
+    if (typeof showToast === "function") showToast("Línea revertida a pendiente.", "success");
   } catch (e) { alert("Error de conexión."); }
 }
 

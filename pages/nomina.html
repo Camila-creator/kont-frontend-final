@@ -6,6 +6,8 @@
   <title>Nómina | Kont Admin</title>
   <link rel="stylesheet" href="../assets/css/main.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="../assets/js/kont-excel.js"></script>
   <style>
     /* =========================================================
        ESTILOS DE PÁGINA (Layout & Data)
@@ -242,16 +244,20 @@
     <main class="main-content">
 
       <div class="top-bar">
-        <h2 style="margin:0;font-size:1.3rem;font-weight:800;color:#0f172a;">Nómina</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn-sm" id="btn-new-employee" onclick="openEmployeeModal()">
-            <i class="bi bi-person-plus"></i> Nuevo empleado
-          </button>
-          <button class="btn-sm primary" onclick="openPeriodModal()">
-            <i class="bi bi-calendar-plus"></i> Nuevo período
-          </button>
-        </div>
-      </div>
+  <h2 style="margin:0;font-size:1.3rem;font-weight:800;color:#0f172a;">Nómina</h2>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn-sm" onclick="KontExcel.nomina(window._periodoActual || {})" style="background: #ecfdf5; color: #059669; border-color: #10b981;">
+      <i class="bi bi-file-earmark-excel-fill"></i> Excel Nómina
+    </button>
+
+    <button class="btn-sm" id="btn-new-employee" onclick="openEmployeeModal()">
+      <i class="bi bi-person-plus"></i> Nuevo empleado
+    </button>
+    <button class="btn-sm primary" onclick="openPeriodModal()">
+      <i class="bi bi-calendar-plus"></i> Nuevo período
+    </button>
+  </div>
+</div>
 
       <div class="kpi-grid" id="kpi-grid">
         <div class="kpi"><div class="kpi-label">Empleados activos</div><div class="kpi-value blue" id="kpi-employees">—</div></div>

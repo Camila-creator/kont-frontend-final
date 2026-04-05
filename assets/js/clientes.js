@@ -92,8 +92,10 @@ function renderTable() {
 
 async function refresh() {
     try {
-        const res = await apiFetch("/customers"); // Usamos el apiFetch global de main.js
+        const res = await apiFetch("/customers");
         customers = Array.isArray(res?.data) ? res.data : [];
+        window._clientes = customers;
+        
         renderTable();
     } catch (err) {
         console.error("Error refrescando clientes:", err);

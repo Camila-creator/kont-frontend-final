@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../assets/css/main.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="../assets/js/kont-excel.js"></script>
 
     <style>
         /* 1. VARIABLES Y BASE */
@@ -295,26 +297,34 @@
             </div>
 
             <div class="top-bar">
-    <div class="filter-group-premium">
-        <label class="filter-label">
-            <i class="bi bi-clock-history"></i> RANGO HISTÓRICO
-        </label>
-        <div class="select-wrapper">
-            <i class="bi bi-calendar3 select-icon"></i>
-            <select id="expense-period" class="select-kont">
-                <option value="weekly">Esta Semana</option>
-                <option value="monthly" selected>Este Mes</option>
-                <option value="quarterly">Trimestre</option>
-                <option value="yearly">Año Completo</option>
-            </select>
+    <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+        <div class="filter-group-premium">
+            <label class="filter-label">
+                <i class="bi bi-clock-history"></i> RANGO HISTÓRICO
+            </label>
+            <div class="select-wrapper">
+                <i class="bi bi-calendar3 select-icon"></i>
+                <select id="expense-period" class="select-kont">
+                    <option value="weekly">Esta Semana</option>
+                    <option value="monthly" selected>Este Mes</option>
+                    <option value="quarterly">Trimestre</option>
+                    <option value="yearly">Año Completo</option>
+                </select>
+            </div>
         </div>
+
+        <button onclick="KontExcel.gastos(window._gastos || [])" 
+                style="background: #ecfdf5; color: #059669; border: 1px solid #10b981; padding: 12px 20px; border-radius: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; height: 48px;">
+            <i class="bi bi-file-earmark-excel-fill" style="font-size: 1.2rem;"></i>
+            <span>Exportar Reporte</span>
+        </button>
     </div>
 
-                <div class="total-badge">
-                    <span style="color: #f43f5e; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Total Egresos</span>
-                    <div id="display-total-expense" style="font-size: 1.8rem; font-weight: 900; color: var(--danger);">$ 0.00</div>
-                </div>
-            </div>
+    <div class="total-badge">
+        <span style="color: #f43f5e; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Total Egresos</span>
+        <div id="display-total-expense" style="font-size: 1.8rem; font-weight: 900; color: var(--danger);">$ 0.00</div>
+    </div>
+</div>
 
             <div class="card" style="border-radius: 20px; border: 1px solid var(--border); overflow: hidden; background: white; padding:0;">
                 <table class="table expense-table-mobile" id="expenses-table" style="width: 100%; border-collapse: collapse;">

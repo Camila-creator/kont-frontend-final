@@ -6,6 +6,8 @@
   <title>Proveedores | Kont Admin</title>
   <link rel="stylesheet" href="../assets/css/main.css"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="../assets/js/kont-excel.js"></script>
 
   <style>
     /* ESTILOS PREMIUM PARA PROVEEDORES */
@@ -204,6 +206,10 @@
           <i class="bi bi-search"></i>
           <input id="supplier-search" type="text" placeholder="Buscar por RIF, nombre, contacto o ubicación...">
         </div>
+
+        <button class="btn-excel" onclick="KontExcel.proveedores(window._proveedores || [])">
+    <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+        </button>
 
         <button id="btn-new-supplier" class="btn-primary" style="padding: 10px 20px; font-weight: bold; border-radius: 8px; white-space: nowrap;">
           <i class="bi bi-plus-lg"></i> Nuevo Proveedor

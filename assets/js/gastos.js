@@ -77,6 +77,9 @@ async function loadExpenses() {
         const period = document.getElementById("expense-period")?.value || "monthly";
         const json = await apiFetch(`${API_EXPENSES}?period=${period}`);
         expenses = json.data || json || [];
+        
+        window._gastos = expenses;
+
         renderTable();
         updateTotal();
     } catch (e) { console.error("Error cargando egresos", e); }

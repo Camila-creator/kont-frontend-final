@@ -492,10 +492,16 @@ function renderPurchases() {
 }
 
 // ---------------- LOADERS ----------------
+// ---------------- LOADERS ----------------
 async function refreshPurchases() {
-  const resp = await apiFetch("/purchases");
-  purchases = normalizeList(resp);
-  renderPurchases();
+  try {
+    const resp = await apiFetch("/purchases");
+    purchases = normalizeList(resp);
+    window._compras = purchases; 
+    renderPurchases();
+  } catch (err) {
+    console.error("Error al refrescar compras:", err);
+  }
 }
 
 async function loadCatalogOnce() {

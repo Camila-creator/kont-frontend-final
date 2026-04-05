@@ -71,11 +71,15 @@ function closeModal() { modal?.classList.add("hidden"); }
 // =========================
 // CARGA DE DATOS
 // =========================
+// =========================
+// CARGA DE DATOS
+// =========================
 async function loadSuppliers() {
     try {
         const res = await apiFetch(SUPPLIERS_API);
-        // Soporta tanto si el backend manda { data: [...] } como si manda el array directo
+
         suppliers = res.data || res || [];
+        window._proveedores = suppliers;
     } catch (err) {
         console.error("Error cargando proveedores:", err);
         openAlert({ title: "Error", message: "No pude cargar la lista de proveedores." });
