@@ -19,6 +19,8 @@ const alertMessage = document.getElementById("alert-message");
 const alertOk = document.getElementById("alert-ok");
 
 let orders = [];
+let currentPage = 1;
+const PAGE_SIZE = 50; 
 
 // Helpers de Formato
 function safeText(v){ return (v ?? "").toString().trim(); }
@@ -75,81 +77,90 @@ function openAlert({ title="Aviso", message="" } = {}){
 }
 document.getElementById("alert-ok")?.addEventListener("click", () => document.getElementById("alert-modal").classList.add("hidden"));
 
-// Render de la Tabla
-function renderTable(){
+// Render de la Tabla - ACTUALIZADO PARA PAGINACIÓN
+function renderTable() {
   if (!tableBody) return;
   tableBody.innerHTML = "";
 
-  const q = safeText(inputSearch?.value).toLowerCase();
-  const st = safeText(selectStatus?.value);
+  // IMPORTANTE: Ya no usamos 'const filtered = orders.filter(...)' 
+  // porque el backend ya nos envía los pedidos filtrados y ordenados.
 
-  const filtered = orders.filter(o=>{
-    const client = safeText(o.customer_name || o.client_name || o.customerName).toLowerCase();
-    const idStr = String(o.id || "");
-    const orderNumStr = String(o.order_number || ""); // <-- Nueva búsqueda por correlativo
-    
-    // El buscador ahora revisa cliente, ID de BD y el Número de Pedido visible
-    const okQ = !q || client.includes(q) || idStr === q || orderNumStr.includes(q);
-    const okSt = !st || safeText(o.status).toUpperCase() === st.toUpperCase();
-    return okQ && okSt;
-  });
-
-  if(!filtered.length){
-    tableBody.innerHTML = `<tr><td colspan="8" style="padding:20px; text-align:center; color:#64748b;">No se encontraron pedidos con ese filtro.</td></tr>`;
+  if (!orders.length) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="8" style="padding:40px; text-align:center; color:#64748b;">
+          <i class="bi bi-inbox" style="font-size:2rem; display:block; margin-bottom:10px; opacity:0.5;"></i>
+          No se encontraron pedidos con estos filtros.
+        </td>
+      </tr>`;
     return;
   }
 
-  filtered
-    .sort((a,b)=> new Date(b.created_at || b.createdAt || b.order_date).getTime() - new Date(a.created_at || a.createdAt || a.order_date).getTime())
-    .forEach(o=>{
-      const tr = document.createElement("tr");
-      tr.style.borderBottom = "1px solid #f1f5f9";
-      
-      // Mostramos order_number si existe, sino caemos al ID interno
-      const displayId = o.order_number ? o.order_number : (o.id ?? "-");
+  // Iteramos directamente sobre 'orders'
+  orders.forEach(o => {
+    const tr = document.createElement("tr");
+    tr.style.borderBottom = "1px solid #f1f5f9";
+    
+    // Mostramos order_number (correlativo) si existe, sino el ID de DB
+    const displayId = o.order_number ? o.order_number : (o.id ?? "-");
 
-      tr.innerHTML = `
-        <td style="padding:15px; font-weight:800; color:#0f766e;">#${displayId}</td>
-        <td style="padding:15px; line-height:1.2;">${fmtDate(o.order_date || o.created_at || o.createdAt)}</td>
-        <td style="padding:15px; font-weight:600; color:#1e293b;"><i class="bi bi-person-fill" style="color:#94a3b8; margin-right:4px;"></i> ${safeText(o.customer_name || o.client_name || o.customerName)}</td>
-        <td style="padding:15px; color:#475569;">${safeText(o.type || o.resolved_type || "No definido")}</td>
-        <td style="padding:15px; text-align:center; font-weight:700; color:#64748b;">${Number(o.items_count || o.itemsCount || 0)}</td>
-        <td class="money-col" style="padding:15px; color:#1e293b;">${money(o.total || 0)}</td>
-        <td style="padding:15px; text-align:center;">${getStatusBadge(o.status)}</td>
-        <td style="padding:15px;">
-          <div class="table-actions">
-            <a class="btn-icon btn-view" href="./pedido_detalle.html?id=${o.id}" title="Ver Detalles"><i class="bi bi-eye"></i></a>
-            
-            <a class="btn-icon btn-invoice" href="./factura.html?orderId=${o.id}" title="Emitir Factura"><i class="bi bi-receipt"></i></a>
-            
-            <button class="btn-icon btn-del" data-action="void" data-id="${o.id}" data-num="${displayId}" title="Anular Pedido"><i class="bi bi-x-circle"></i></button>
-          </div>
-        </td>
-      `;
-      tableBody.appendChild(tr);
-    });
+    tr.innerHTML = `
+      <td style="padding:15px; font-weight:800; color:#0f766e;">#${displayId}</td>
+      <td style="padding:15px; line-height:1.2;">${fmtDate(o.order_date || o.created_at || o.createdAt)}</td>
+      <td style="padding:15px; font-weight:600; color:#1e293b;">
+        <i class="bi bi-person-fill" style="color:#94a3b8; margin-right:4px;"></i> 
+        ${safeText(o.customer_name || o.client_name || o.customerName)}
+      </td>
+      <td style="padding:15px; color:#475569;">${safeText(o.type || o.resolved_type || "No definido")}</td>
+      <td style="padding:15px; text-align:center; font-weight:700; color:#64748b;">
+        ${Number(o.items_count || o.itemsCount || 0)}
+      </td>
+      <td class="money-col" style="padding:15px; color:#1e293b;">${money(o.total || 0)}</td>
+      <td style="padding:15px; text-align:center;">${getStatusBadge(o.status)}</td>
+      <td style="padding:15px;">
+        <div class="table-actions">
+          <a class="btn-icon btn-view" href="./pedido_detalle.html?id=${o.id}" title="Ver Detalles">
+            <i class="bi bi-eye"></i>
+          </a>
+          <a class="btn-icon btn-invoice" href="./factura.html?orderId=${o.id}" title="Emitir Factura">
+            <i class="bi bi-receipt"></i>
+          </a>
+          <button class="btn-icon btn-del" data-action="void" data-id="${o.id}" data-num="${displayId}" title="Anular Pedido">
+            <i class="bi bi-x-circle"></i>
+          </button>
+        </div>
+      </td>
+    `;
+    tableBody.appendChild(tr);
+  });
 
-  // Evento para anular
-  tableBody.querySelectorAll('button[data-action="void"]').forEach(btn=>{
-    btn.addEventListener("click", async ()=>{
+  // Re-vinculamos los eventos de los botones de anular
+  tableBody.querySelectorAll('button[data-action="void"]').forEach(btn => {
+    btn.onclick = async () => {
       const id = Number(btn.getAttribute("data-id"));
-      const num = btn.getAttribute("data-num"); // Para que el mensaje sea más claro
+      const num = btn.getAttribute("data-num");
+      
       const ok = await openConfirm({
-        title:"Anular Pedido",
-        message:`¿Seguro que deseas anular el pedido #${num}? Esta acción cambiará su estado a ANULADO.`,
-        okText:"Sí, Anular",
+        title: "Anular Pedido",
+        message: `¿Seguro que deseas anular el pedido #${num}? Esta acción devolverá el stock y marcará el pedido como ANULADO.`,
+        okText: "Sí, Anular",
         okVariant: "danger"
       });
-      if(!ok) return;
 
-      try{
-        await apiFetch(`/orders/${id}`, { method: "PATCH", body: JSON.stringify({ status:"ANULADO" }) });
-        await loadOrders();
-        renderTable();
-      }catch(err){
-        openAlert({ title:"Error", message: err.message || "No se pudo anular el pedido." });
+      if (!ok) return;
+
+      try {
+        await apiFetch(`/orders/${id}`, { 
+          method: "PATCH", 
+          body: JSON.stringify({ status: "ANULADO" }) 
+        });
+        
+        // Refrescamos la página actual (manteniendo filtros)
+        await loadOrders(currentPage); 
+      } catch (err) {
+        openAlert({ title: "Error", message: err.message || "No se pudo anular el pedido." });
       }
-    });
+    };
   });
 }
 
@@ -157,32 +168,96 @@ function irAFacturar(orderId) {
     window.location.href = `factura.html?orderId=${orderId}`;
 }
 
-async function loadOrders() {
+async function loadOrders(page = 1) {
+  currentPage = page;
+  
+  // Capturamos los filtros actuales para enviarlos al backend
+  const searchTerm = inputSearch?.value || "";
+  const statusFilter = selectStatus?.value || "";
+
+  const params = new URLSearchParams({
+    page: page,
+    limit: PAGE_SIZE,
+    search: searchTerm,
+    status: statusFilter,
+    t: Date.now() // Anti-cache
+  });
+
   try {
-    const response = await apiFetch("/orders?t=" + Date.now()); 
-    orders = Array.isArray(response) ? response : (response.data || []);
+    const response = await apiFetch(`/orders?${params}`);
+    if (!response) return;
+
+    // Manejamos la respuesta: si viene paginada usamos .data, si no, el array directo
+    if (response.data && response.pagination) {
+        orders = response.data;
+        renderPagination(response.pagination);
+    } else {
+        orders = Array.isArray(response) ? response : (response.data || []);
+        // Si no hay info de paginación, limpiamos el contenedor
+        const pgContainer = document.getElementById("pagination-container");
+        if (pgContainer) pgContainer.innerHTML = "";
+    }
+
     renderTable(); 
   } catch (err) {
     console.error("Error cargando pedidos:", err);
     orders = [];
-    openAlert({ title: "Error conectando", message: "No pude actualizar la lista de pedidos." });
+    openAlert({ title: "Error", message: "No pude actualizar la lista de pedidos." });
   }
 }
 
-async function init(){
-  try{
-    await loadOrders();
-  }catch(err){
-    openAlert({ title:"Error conectando", message:`No pude cargar los pedidos desde el servidor.` });
+function renderPagination(p) {
+  const container = document.getElementById("pagination-container");
+  if (!container) return;
+
+  if (!p || p.pages <= 1) {
+    container.innerHTML = "";
+    return;
   }
 
-  inputSearch?.addEventListener("input", renderTable);
-  selectStatus?.addEventListener("change", renderTable);
+  container.innerHTML = `
+    <div style="display:flex; align-items:center; justify-content:center; gap:12px; padding:20px; border-top:1px solid #f1f5f9; background:white;">
+      <button class="btn-sm" ${p.page <= 1 ? "disabled style='opacity:0.5; cursor:not-allowed;'" : ""} 
+              onclick="loadOrders(${p.page - 1})" 
+              style="border:1px solid #e2e8f0; background:white; border-radius:8px; padding:6px 12px; font-weight:600;">
+        <i class="bi bi-chevron-left"></i> Anterior
+      </button>
+
+      <span style="font-size:13px; color:#64748b; font-weight:500;">
+        Página <strong>${p.page}</strong> de <strong>${p.pages}</strong> 
+        <span style="margin-left:4px; opacity:0.6;">(${p.total} pedidos)</span>
+      </span>
+
+      <button class="btn-sm" ${p.page >= p.pages ? "disabled style='opacity:0.5; cursor:not-allowed;'" : ""} 
+              onclick="loadOrders(${p.page + 1})"
+              style="border:1px solid #e2e8f0; background:white; border-radius:8px; padding:6px 12px; font-weight:600;">
+        Siguiente <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+  `;
+}
+
+async function init(){
+  await loadOrders(1);
+
+  // Cuando el usuario escribe o cambia el estado, pedimos datos nuevos al servidor
+  inputSearch?.addEventListener("input", debounce(() => loadOrders(1), 400));
+  selectStatus?.addEventListener("change", () => loadOrders(1));
+
   btnClear?.addEventListener("click", () => {
-    inputSearch.value = "";
-    selectStatus.value = "";
-    loadOrders();
+    if(inputSearch) inputSearch.value = "";
+    if(selectStatus) selectStatus.value = "";
+    loadOrders(1);
   });
+}
+
+// Helper para no saturar el servidor mientras escriben
+function debounce(fn, delay) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
 }
 
 document.addEventListener("DOMContentLoaded", init);
