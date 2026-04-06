@@ -479,11 +479,11 @@ async function initLayout() {
   const isLoginPage = window.location.pathname.includes("login.html");
   if (isLoginPage) return;
 
-  // Carga de componentes base
+  // 1. Carga de componentes base (indispensable para que existan los IDs)
   await loadComponent("sidebar", "../components/sidebar.html");
   await loadComponent("header", "../components/header.html");
 
-  // Configuración de UI y Seguridad
+  // 2. Configuración de UI y Seguridad
   applyRolePermissions();
   applyCategoryCustomization(); 
   markActiveMenu();
@@ -492,7 +492,33 @@ async function initLayout() {
   updateHeaderUserInfo();
   setupLogout();
 
-  // --- INICIALIZACIÓN DE ALERTAS ---
+  // 3. MICRO-INTERACCIÓN PREMIUM: Kont Intelligence
+  const intelBtn = document.getElementById('nav-intel');
+  if (intelBtn) {
+    const icon = intelBtn.querySelector('i');
+    
+    // Efecto de presión (Click)
+    intelBtn.addEventListener('mousedown', () => {
+      icon.style.transition = "transform 0.1s cubic-bezier(0.4, 0, 0.2, 1)";
+      icon.style.transform = "scale(0.85)";
+    });
+
+    // Efecto de liberación
+    const resetIconScale = () => {
+      icon.style.transition = "transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+      // Si el elemento está activo, vuelve a su escala de resalte (1.15), si no, a la normal (1)
+      if (intelBtn.classList.contains('active')) {
+        icon.style.transform = "scale(1.15)";
+      } else {
+        icon.style.transform = "scale(1)";
+      }
+    };
+
+    intelBtn.addEventListener('mouseup', resetIconScale);
+    intelBtn.addEventListener('mouseleave', resetIconScale);
+  }
+
+  // 4. INICIALIZACIÓN DE ALERTAS
   setupAlertsToggle(); 
   refreshHeaderAlerts(); 
 }

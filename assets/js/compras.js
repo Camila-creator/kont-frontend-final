@@ -61,14 +61,25 @@ let currentPayTotalUSD = 0;
 function today() { return new Date().toISOString().slice(0, 10); }
 function upper(v) { return String(v || "").trim().toUpperCase(); }
 
-function openModal(el) { 
+function openModal(el) {
     if (el) {
         el.classList.remove("hidden");
         const content = el.querySelector('.modal-content');
-        if(content) content.scrollTop = 0;
-    } 
+        if (content) content.scrollTop = 0;
+        document.body.classList.add("modal-open");  // ← FIX: oculta el header
+    }
 }
-function closeModal(el) { if (el) el.classList.add("hidden"); }
+
+function closeModal(el) {
+    if (el) {
+        el.classList.add("hidden");
+        // Solo quitar modal-open si NO hay otro modal abierto
+        const anyOpen = document.querySelector('.modal:not(.hidden)');
+        if (!anyOpen) {
+            document.body.classList.remove("modal-open");  // ← FIX: restaura el header
+        }
+    }
+}
 
 function unwrapApiPayload(payload) {
   if (!payload) return payload;

@@ -14,3 +14,55 @@
   80% { transform: translate(2px, -2px); }
   100% { transform: translate(0); }
 }
+
+/* --- EFECTO ÚNICO PARA KONT INTELLIGENCE --- */
+
+/* Estado base del icono */
+#nav-intel i {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* 1. Efecto al pasar el mouse (Hover) */
+#nav-intel:hover i {
+  color: #10b981 !important; /* Tu verde esmeralda */
+  transform: scale(1.25) rotate(15deg);
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
+}
+
+/* 2. Estado Activo (Cuando estás en la página) */
+#nav-intel.active i {
+  color: #10b981 !important;
+  animation: neural-pulse 3s infinite ease-in-out;
+}
+
+/* 3. Animación de "Procesamiento" */
+@keyframes neural-pulse {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.3));
+  }
+  50% {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.8)) brightness(1.2);
+    color: #34d399; /* Un tono ligeramente más claro en el pico del pulso */
+  }
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.3));
+  }
+}
+
+/* Opcional: Pequeño destello de luz detrás del icono en el estado activo */
+#nav-intel.active::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #10b981;
+  left: 20px;
+  border-radius: 50%;
+  filter: blur(15px);
+  opacity: 0.4;
+  z-index: -1;
+}
